@@ -23,6 +23,7 @@ vendor/
 # Build output
 /bin/
 /dist/
+/backend/bin/
 
 # Temporary files
 *.tmp
@@ -47,3 +48,4 @@ uploads/
 
 # Logs
 *.log
+
