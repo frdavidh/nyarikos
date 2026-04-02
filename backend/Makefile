@@ -12,8 +12,12 @@ run:
 dev:
 	go run ./cmd/api
 
-lint:
+lint: format
 	golangci-lint run ./...
+
+format:
+	@gofumpt -l -w .
+	@goimports -w .
 
 migrate-up:
 	migrate -path db/migrations -database "postgresql://postgresql:password@localhost:5432/nyarikos?sslmode=disable" up
