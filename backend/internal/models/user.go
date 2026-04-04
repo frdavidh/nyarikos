@@ -11,8 +11,9 @@ type User struct {
 	Name        string         `json:"name" gorm:"not null"`
 	Email       string         `json:"email" gorm:"uniqueIndex;not null"`
 	Password    *string        `json:"-"`
-	PhoneNumber *string        `json:"phoneNumber" gorm:"uniqueIndex;not null"`
+	PhoneNumber *string        `json:"phone_number" gorm:"uniqueIndex"`
 	Role        UserRole       `json:"role" gorm:"type:user_role;default:pencari"`
+	IsActive    bool           `json:"is_active" gorm:"default:true"`
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
@@ -29,7 +30,7 @@ type RefreshToken struct {
 	Token      string    `json:"token" gorm:"uniqueIndex;not null"`
 	DeviceInfo *string   `json:"device_info"`
 	IPAddress  *string   `json:"ip_address"`
-	ExpiredAt  time.Time `json:"expired_at" gorm:"not null"`
+	ExpiresAt  time.Time `json:"expires_at" gorm:"not null"`
 	IsRevoked  *bool     `json:"is_revoked" gorm:"default:false"`
 	CreatedAt  time.Time `json:"createdAt"`
 
