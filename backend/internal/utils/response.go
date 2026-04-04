@@ -1,16 +1,17 @@
 package utils
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Response struct {
-	Data    interface{} `json:"data"`
+	Data    interface{} `json:"data,omitempty"`
 	Success bool        `json:"success"`
-	Error   string      `json:"error"`
-	Message string      `json:"message"`
+	Error   string      `json:"error,omitempty"`
+	Message string      `json:"message,omitempty"`
 }
 
 type PaginatedResponse struct {
@@ -48,7 +49,7 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	}
 
 	if err != nil {
-		response.Error = err.Error()
+		log.Printf("[ERROR] %v", err)
 	}
 
 	c.JSON(statusCode, response)
@@ -58,16 +59,16 @@ func BadRequestResponse(c *gin.Context, message string, err error) {
 	ErrorResponse(c, http.StatusBadRequest, message, err)
 }
 
-func UnauthorizedResponse(c *gin.Context, message string) {
-	ErrorResponse(c, http.StatusUnauthorized, message, nil)
+func UnauthorizedResponse(c *gin.Context, message string, err error) {
+	ErrorResponse(c, http.StatusUnauthorized, message, err)
 }
 
-func ForbiddenResponse(c *gin.Context, message string) {
-	ErrorResponse(c, http.StatusForbidden, message, nil)
+func ForbiddenResponse(c *gin.Context, message string, err error) {
+	ErrorResponse(c, http.StatusForbidden, message, err)
 }
 
-func NotFoundResponse(c *gin.Context, message string) {
-	ErrorResponse(c, http.StatusNotFound, message, nil)
+func NotFoundResponse(c *gin.Context, message string, err error) {
+	ErrorResponse(c, http.StatusNotFound, message, err)
 }
 
 func InternalServerErrorResponse(c *gin.Context, message string, err error) {
