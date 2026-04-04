@@ -4,22 +4,25 @@ import (
 	"net/http"
 
 	"github.com/frdavidh/nyarikos/internal/config"
+	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 )
 
 type Server struct {
-	config *config.Config
-	db     *gorm.DB
-	logger *zerolog.Logger
+	config      *config.Config
+	db          *gorm.DB
+	logger      *zerolog.Logger
+	authService services.AuthService
 }
 
 func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
 	return &Server{
-		config: cfg,
-		db:     db,
-		logger: logger,
+		config:      cfg,
+		db:          db,
+		logger:      logger,
+		authService: services.NewAuthService(db, cfg),
 	}
 }
 
@@ -31,6 +34,17 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	router.Use(s.corsMiddleware())
 
 	router.GET("/health", s.healthCheck)
+
+	api := router.Group("/api/v1")
+	{
+		auth := api.Group("/auth")
+		{ //nolint:gocritic
+			auth.POST("/register", s.register)
+			auth.POST("/login", s.login)
+			auth.POST("/refresh", s.refreshToken)
+			auth.POST("/logout", s.logout)
+		}
+	}
 
 	return router
 }

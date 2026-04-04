@@ -1,16 +1,17 @@
 package utils
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Response struct {
-	Data    interface{} `json:"data"`
+	Data    interface{} `json:"data,omitempty"`
 	Success bool        `json:"success"`
-	Error   string      `json:"error"`
-	Message string      `json:"message"`
+	Error   string      `json:"error,omitempty"`
+	Message string      `json:"message,omitempty"`
 }
 
 type PaginatedResponse struct {
@@ -48,7 +49,7 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	}
 
 	if err != nil {
-		response.Error = err.Error()
+		log.Printf("[ERROR] %v", err)
 	}
 
 	c.JSON(statusCode, response)

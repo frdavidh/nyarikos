@@ -34,7 +34,6 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to get database connection")
 	}
 
-	// defer mainDB.Close()
 	defer func() {
 		if err := mainDB.Close(); err != nil {
 			log.Error().Err(err).Msg("failed to close database connection")
