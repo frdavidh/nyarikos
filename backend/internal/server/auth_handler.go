@@ -1,7 +1,7 @@
 package server
 
 import (
-	"net/http"
+	"errors"
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
@@ -16,10 +16,14 @@ func (s *Server) register(c *gin.Context) {
 		return
 	}
 
-	authService := services.NewAuthService(s.db, s.config)
-	response, err := authService.Register(&req)
+	response, err := s.authService.Register(&req)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal server error", err)
+		switch {
+		case errors.Is(err, services.ErrEmailAlreadyExists):
+			utils.BadRequestResponse(c, "email already registered", nil)
+		default:
+			utils.InternalServerErrorResponse(c, "something went wrong", err)
+		}
 		return
 	}
 
@@ -33,10 +37,15 @@ func (s *Server) login(c *gin.Context) {
 		return
 	}
 
-	authService := services.NewAuthService(s.db, s.config)
-	response, err := authService.Login(&req)
+	response, err := s.authService.Login(&req)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal server error", err)
+		switch {
+		case errors.Is(err, services.ErrUserNotFound),
+			errors.Is(err, services.ErrInvalidPassword):
+			utils.UnauthorizedResponse(c, "invalid email or password", nil)
+		default:
+			utils.InternalServerErrorResponse(c, "something went wrong", err)
+		}
 		return
 	}
 
@@ -50,10 +59,16 @@ func (s *Server) refreshToken(c *gin.Context) {
 		return
 	}
 
-	authService := services.NewAuthService(s.db, s.config)
-	response, err := authService.RefreshToken(&req)
+	response, err := s.authService.RefreshToken(&req)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal server error", err)
+		switch {
+		case errors.Is(err, services.ErrInvalidRefreshToken),
+			errors.Is(err, services.ErrRefreshTokenExpired),
+			errors.Is(err, services.ErrRefreshTokenRevoked):
+			utils.UnauthorizedResponse(c, err.Error(), nil)
+		default:
+			utils.InternalServerErrorResponse(c, "something went wrong", err)
+		}
 		return
 	}
 
@@ -67,9 +82,8 @@ func (s *Server) logout(c *gin.Context) {
 		return
 	}
 
-	authService := services.NewAuthService(s.db, s.config)
-	if err := authService.Logout(req.RefreshToken); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "internal server error", err)
+	if err := s.authService.Logout(req.RefreshToken); err != nil {
+		utils.InternalServerErrorResponse(c, "something went wrong", err)
 		return
 	}
 
