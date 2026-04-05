@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Kost struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
@@ -10,8 +14,8 @@ type Kost struct {
 	Address     string         `json:"address" gorm:"not null"`
 	City        string         `json:"city" gorm:"index;not null"`
 	IsPremium   bool           `json:"is_premium" gorm:"default:false"`
-	CreatedAt   string         `json:"createdAt"`
-	UpdatedAt   string         `json:"updatedAt"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 
 	Owner User   `json:"owner,omitempty" gorm:"foreignKey:OwnerID" `

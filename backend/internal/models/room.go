@@ -12,8 +12,8 @@ type Room struct {
 	RoomType      string         `json:"name" gorm:"not null"`
 	PricePerMonth float64        `json:"description" gorm:"index;type:decimal(12,2);not null"`
 	TotalRooms    string         `json:"address" gorm:"not null;default:1"`
-	CreatedAt     time.Time      `json:"createdAt"`
-	UpdatedAt     time.Time      `json:"updatedAt"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index" `
 
 	Kost       Kost       `json:"-" gorm:"foreignKey:KostID" `

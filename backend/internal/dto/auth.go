@@ -1,6 +1,8 @@
 package dto
 
-import "time"
+import (
+	"time"
+)
 
 type RegisterRequest struct {
 	Email       string `json:"email" binding:"required,email"`

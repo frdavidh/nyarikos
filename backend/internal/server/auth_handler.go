@@ -9,14 +9,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) register(c *gin.Context) {
+type AuthHandler struct {
+	authService services.AuthService
+}
+
+func NewAuthHandler(authService services.AuthService) *AuthHandler {
+	return &AuthHandler{authService: authService}
+}
+
+func (h *AuthHandler) Routes(api *gin.RouterGroup) {
+	auth := api.Group("/auth")
+	auth.POST("/register", h.register)
+	auth.POST("/login", h.login)
+	auth.POST("/refresh", h.refreshToken)
+	auth.POST("/logout", h.logout)
+}
+
+func (h *AuthHandler) register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.BadRequestResponse(c, "invalid request body", err)
 		return
 	}
 
-	response, err := s.authService.Register(&req)
+	response, err := h.authService.Register(&req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrEmailAlreadyExists):
@@ -30,14 +46,14 @@ func (s *Server) register(c *gin.Context) {
 	utils.CreatedResponse(c, "user created", response)
 }
 
-func (s *Server) login(c *gin.Context) {
+func (h *AuthHandler) login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.BadRequestResponse(c, "invalid request body", err)
 		return
 	}
 
-	response, err := s.authService.Login(&req)
+	response, err := h.authService.Login(&req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrUserNotFound),
@@ -52,14 +68,14 @@ func (s *Server) login(c *gin.Context) {
 	utils.SuccessResponse(c, "user logged in", response)
 }
 
-func (s *Server) refreshToken(c *gin.Context) {
+func (h *AuthHandler) refreshToken(c *gin.Context) {
 	var req dto.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.BadRequestResponse(c, "invalid request body", err)
 		return
 	}
 
-	response, err := s.authService.RefreshToken(&req)
+	response, err := h.authService.RefreshToken(&req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrInvalidRefreshToken),
@@ -75,14 +91,14 @@ func (s *Server) refreshToken(c *gin.Context) {
 	utils.SuccessResponse(c, "token refreshed", response)
 }
 
-func (s *Server) logout(c *gin.Context) {
+func (h *AuthHandler) logout(c *gin.Context) {
 	var req dto.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.BadRequestResponse(c, "invalid request body", err)
 		return
 	}
 
-	if err := s.authService.Logout(req.RefreshToken); err != nil {
+	if err := h.authService.Logout(req.RefreshToken); err != nil {
 		utils.InternalServerErrorResponse(c, "something went wrong", err)
 		return
 	}
