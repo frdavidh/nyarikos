@@ -14,15 +14,21 @@ type Server struct {
 	config      *config.Config
 	db          *gorm.DB
 	logger      *zerolog.Logger
-	authService services.AuthService
+	authHandler *AuthHandler
+	userHandler *UserHandler
 }
 
 func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
+	authService := services.NewAuthService(db, cfg)
+	userService := services.NewUserService(db)
+
 	return &Server{
-		config:      cfg,
-		db:          db,
-		logger:      logger,
-		authService: services.NewAuthService(db, cfg),
+		config: cfg,
+		db:     db,
+		logger: logger,
+
+		authHandler: NewAuthHandler(authService),
+		userHandler: NewUserHandler(userService),
 	}
 }
 
@@ -35,16 +41,28 @@ func (s *Server) SetupRoutes() *gin.Engine {
 
 	router.GET("/health", s.healthCheck)
 
-	api := router.Group("/api/v1")
-	{
-		auth := api.Group("/auth")
-		{ //nolint:gocritic
-			auth.POST("/register", s.register)
-			auth.POST("/login", s.login)
-			auth.POST("/refresh", s.refreshToken)
-			auth.POST("/logout", s.logout)
-		}
-	}
+	// api := router.Group("/api/v1")
+	// {
+	// 	auth := api.Group("/auth")
+	// 	{ //nolint:gocritic
+	// 		auth.POST("/register", s.register)
+	// 		auth.POST("/login", s.login)
+	// 		auth.POST("/refresh", s.refreshToken)
+	// 		auth.POST("/logout", s.logout)
+	// 	}
+
+	// 	user := api.Group("/user")
+	// 	user.Use(s.authMiddleware())
+	// 	{
+	// 		user.GET("/profile", s.getProfile)
+	// 		user.PUT("/profile", s.updateProfile)
+	// 	}
+
+	// }
+
+	api := router.Group("api/v1")
+	s.authHandler.Routes(api)
+	s.userHandler.Routes(api, s.authMiddleware())
 
 	return router
 }
