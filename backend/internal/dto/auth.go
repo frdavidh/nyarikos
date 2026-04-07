@@ -31,7 +31,7 @@ type UserResponse struct {
 	ID          uint      `json:"id"`
 	Name        string    `json:"name"`
 	Email       string    `json:"email"`
-	PhoneNumber *string   `json:"phoneNumber,omitempty"`
+	PhoneNumber *string   `json:"phone_number,omitempty"`
 	Role        string    `json:"role"`
 	IsActive    bool      `json:"is_active"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -39,6 +39,6 @@ type UserResponse struct {
 }
 
 type UpdateProfileRequest struct {
-	Name        string `json:"name"`
-	PhoneNumber string `json:"phoneNumber"`
+	Name        *string `json:"name"`
+	PhoneNumber *string `json:"phone_number"`
 }
