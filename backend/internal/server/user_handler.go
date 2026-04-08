@@ -15,9 +15,9 @@ func NewUserHandler(userService services.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-func (h *UserHandler) Routes(api *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *UserHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFunc) {
 	user := api.Group("/user")
-	user.Use(authMiddleware)
+	user.Use(middlewares...)
 	user.GET("/profile", h.GetProfile)
 	user.PUT("/profile", h.UpdateProfile)
 }
