@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/frdavidh/nyarikos/internal/config"
+	"github.com/frdavidh/nyarikos/internal/models"
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -16,11 +17,13 @@ type Server struct {
 	logger      *zerolog.Logger
 	authHandler *AuthHandler
 	userHandler *UserHandler
+	kostHandler *KostHandler
 }
 
 func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
 	authService := services.NewAuthService(db, cfg)
 	userService := services.NewUserService(db)
+	kostService := services.NewKostService(db)
 
 	return &Server{
 		config: cfg,
@@ -29,6 +32,7 @@ func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
 
 		authHandler: NewAuthHandler(authService),
 		userHandler: NewUserHandler(userService),
+		kostHandler: NewKostHandler(kostService),
 	}
 }
 
@@ -63,6 +67,7 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	api := router.Group("api/v1")
 	s.authHandler.Routes(api)
 	s.userHandler.Routes(api, s.authMiddleware())
+	s.kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
 
 	return router
 }
