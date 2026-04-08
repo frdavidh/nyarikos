@@ -3,13 +3,13 @@
 MIGRATIONS_DIR = db/migrations
 DB_URL = "postgresql://postgres:password@localhost:5432/nyarikos?sslmode=disable"
 
-build:
+build: migrate-up
 	go build -o bin/app ./cmd/api
 
-run:
+run: migrate-up
 	go run ./cmd/api
 
-dev:
+dev: migrate-up
 	go run ./cmd/api
 
 lint: format
