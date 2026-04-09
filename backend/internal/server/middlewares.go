@@ -38,36 +38,6 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 	}
 }
 
-// func (s *Server) adminMiddleware() gin.HandlerFunc {
-// 	s.authMiddleware()
-// 	return func(c *gin.Context) {
-// 		role := c.GetString("role")
-// 		if role != "admin" {
-// 			utils.ForbiddenResponse(c, "Forbidden", nil)
-// 			c.Abort()
-// 			return
-// 		}
-// 		c.Next()
-// 	}
-// }
-
-// func (s *Server) ownerMiddleware() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		s.authMiddleware()(c)
-// 		if c.IsAborted() {
-// 			return
-// 		}
-
-// 		role := c.GetString("role")
-// 		if role != "pemilik" {
-// 			utils.ForbiddenResponse(c, "Forbidden", nil)
-// 			c.Abort()
-// 			return
-// 		}
-// 		c.Next()
-// 	}
-// }
-
 func (s *Server) roleMiddleware(allowedRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role := c.GetString("role")

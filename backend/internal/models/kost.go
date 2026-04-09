@@ -18,6 +18,6 @@ type Kost struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 
-	Owner User   `json:"owner,omitempty" gorm:"foreignKey:OwnerID" `
-	Rooms []Room `json:"rooms,omitempty" gorm:"foreignKey:KostID" `
+	Owner User   `json:"users" gorm:"foreignKey:OwnerID" `
+	Rooms []Room `json:"rooms" gorm:"foreignKey:KostID" `
 }

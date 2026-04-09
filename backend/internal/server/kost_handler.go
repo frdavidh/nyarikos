@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
@@ -51,14 +50,7 @@ func (h *KostHandler) CreateKost(c *gin.Context) {
 }
 
 func (h *KostHandler) GetAllKost(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if page < 1 {
-		page = 1
-	}
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if limit < 1 {
-		limit = 10
-	}
+	page, limit := parsePagination(c)
 
 	kosts, total, err := h.kostService.GetAllKost(page, limit)
 	if err != nil {
@@ -80,17 +72,12 @@ func (h *KostHandler) GetAllKost(c *gin.Context) {
 }
 
 func (h *KostHandler) GetKost(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.BadRequestResponse(c, "invalid kost ID", err)
+	id, ok := parseUintParam(c, "id")
+	if !ok {
 		return
 	}
-	kost, err := h.kostService.GetKost(uint(id))
-	// if err != nil {
-	// 	utils.InternalServerErrorResponse(c, "Failed to get kost", err)
-	// 	return
-	// }
+
+	kost, err := h.kostService.GetKost(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrKostNotFound):
@@ -105,28 +92,27 @@ func (h *KostHandler) GetKost(c *gin.Context) {
 }
 
 func (h *KostHandler) UpdateKost(c *gin.Context) {
-	idStr := c.Param("id")
-	kostID, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.BadRequestResponse(c, "invalid kost ID", err)
+	kostID, ok := parseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
 	userID := c.GetUint("user_id")
-
 	var req dto.UpdateKostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.BadRequestResponse(c, "invalid request body", err)
 		return
 	}
 
-	kost, err := h.kostService.UpdateKost(uint(kostID), userID, &req)
+	kost, err := h.kostService.UpdateKost(kostID, userID, &req)
 	if err != nil {
 		switch {
+		case errors.Is(err, services.ErrKostNotFound):
+			utils.NotFoundResponse(c, "kost not found", nil)
 		case errors.Is(err, services.ErrUnauthorized):
-			utils.ForbiddenResponse(c, "You are not allowed to update kost", nil)
+			utils.ForbiddenResponse(c, "you are not allowed to update this kost", nil)
 		default:
-			utils.InternalServerErrorResponse(c, "Failed to update kost", err)
+			utils.InternalServerErrorResponse(c, "failed to update kost", err)
 		}
 		return
 	}
@@ -135,14 +121,13 @@ func (h *KostHandler) UpdateKost(c *gin.Context) {
 }
 
 func (h *KostHandler) DeleteKost(c *gin.Context) {
-	idStr := c.Param("id")
-	kostID, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.BadRequestResponse(c, "invalid kost ID", err)
+	kostID, ok := parseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	kost, err := h.kostService.DeleteKost(uint(kostID))
+	userID := c.GetUint("user_id")
+	kost, err := h.kostService.DeleteKost(kostID, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrKostNotFound):
