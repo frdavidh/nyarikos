@@ -17,7 +17,7 @@ var (
 type KostService interface {
 	CreateKost(ownerID uint, req *dto.CreateKostRequest) (*dto.KostResponse, error)
 	UpdateKost(kostID, userID uint, req *dto.UpdateKostRequest) (*dto.KostResponse, error)
-	DeleteKost(id uint) (*dto.KostResponse, error)
+	DeleteKost(kostID, userID uint) (*dto.KostResponse, error)
 	// GetKost(req *dto.GetKostRequest) (*dto.KostResponse, error)
 	GetAllKost(page, limit int) ([]dto.KostResponse, int64, error)
 	GetKost(id uint) (*dto.KostResponse, error)
@@ -51,14 +51,6 @@ func (s *kostService) CreateKost(ownerID uint, req *dto.CreateKostRequest) (*dto
 	}
 	return toKostResponse(&kost), nil
 }
-
-// func isUniqueContaintError(err error) bool {
-// 	var pgErr *pgconn.PgError
-// 	if errors.As(err, &pgErr) {
-// 		return pgErr.Code == "23505"
-// 	}
-// 	return false
-// }
 
 func (s *kostService) GetAllKost(page, limit int) ([]dto.KostResponse, int64, error) {
 	var kosts []models.Kost
@@ -127,9 +119,9 @@ func (s *kostService) UpdateKost(kostID, userID uint, req *dto.UpdateKostRequest
 	return toKostResponse(&kost), nil
 }
 
-func (s *kostService) DeleteKost(userID uint) (*dto.KostResponse, error) {
+func (s *kostService) DeleteKost(kostID, userID uint) (*dto.KostResponse, error) {
 	var kost models.Kost
-	if err := s.db.First(&kost, userID).Error; err != nil {
+	if err := s.db.First(&kost, kostID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrKostNotFound
 		}
@@ -137,23 +129,13 @@ func (s *kostService) DeleteKost(userID uint) (*dto.KostResponse, error) {
 	}
 
 	if kost.OwnerID != userID {
+		fmt.Println(kost.OwnerID, kost.Owner.ID, userID)
 		return nil, ErrUnauthorized
 	}
 
 	if err := s.db.Delete(&kost).Error; err != nil {
 		return nil, fmt.Errorf("failed to delete kost: %w", err)
 	}
-	// return &dto.KostResponse{
-	// 	ID:          kost.ID,
-	// 	OwnerID:     kost.OwnerID,
-	// 	Name:        kost.Name,
-	// 	Description: kost.Description,
-	// 	Address:     kost.Address,
-	// 	City:        kost.City,
-	// 	IsPremium:   kost.IsPremium,
-	// 	CreatedAt:   kost.CreatedAt,
-	// 	UpdatedAt:   kost.UpdatedAt,
-	// }, nil
 	return toKostResponse(&kost), nil
 }
 
