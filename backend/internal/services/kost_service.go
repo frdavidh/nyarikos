@@ -44,6 +44,7 @@ func (s *kostService) CreateKost(ownerID uint, req *dto.CreateKostRequest) (*dto
 		Address:     req.Address,
 		City:        req.City,
 		IsPremium:   isPremium,
+		KostType:    req.KostType,
 	}
 
 	if err := s.db.Create(&kost).Error; err != nil {
@@ -112,6 +113,9 @@ func (s *kostService) UpdateKost(kostID, userID uint, req *dto.UpdateKostRequest
 	if req.IsPremium != nil {
 		kost.IsPremium = *req.IsPremium
 	}
+	if req.KostType != nil {
+		kost.KostType = *req.KostType
+	}
 
 	if err := s.db.Save(&kost).Error; err != nil {
 		return nil, fmt.Errorf("failed to update kost: %w", err)
@@ -148,6 +152,7 @@ func toKostResponse(kost *models.Kost) *dto.KostResponse {
 		Address:     kost.Address,
 		City:        kost.City,
 		IsPremium:   kost.IsPremium,
+		KostType:    kost.KostType,
 		CreatedAt:   kost.CreatedAt,
 		UpdatedAt:   kost.UpdatedAt,
 	}

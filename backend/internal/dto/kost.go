@@ -13,6 +13,7 @@ type KostRequest struct {
 	Address     string `json:"address" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	IsPremium   *bool  `json:"is_premium" binding:"omitempty"`
+	KostType    string `json:"kost_type" binding:"required"`
 }
 
 type KostResponse struct {
@@ -26,15 +27,16 @@ type KostResponse struct {
 	CreatedAt   time.Time       `json:"created_at"`
 	UpdatedAt   time.Time       `json:"updated_at"`
 	Images      []ImageResponse `json:"images,omitempty"`
+	KostType    string          `json:"kost_type"`
 }
 
 type CreateKostRequest struct {
-	OwnerID     uint   `json:"owner_id" binding:"required"`
 	Name        string `json:"name" binding:"required,max=255"`
 	Description string `json:"description" binding:"omitempty"`
 	Address     string `json:"address" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	IsPremium   *bool  `json:"is_premium" binding:"omitempty"`
+	KostType    string `json:"kost_type" binding:"required"`
 }
 
 type UpdateKostRequest struct {
@@ -43,4 +45,5 @@ type UpdateKostRequest struct {
 	Address     *string `json:"address" binding:"omitempty"`
 	City        *string `json:"city" binding:"omitempty"`
 	IsPremium   *bool   `json:"is_premium" binding:"omitempty"`
+	KostType    *string `json:"kost_type" binding:"omitempty"`
 }

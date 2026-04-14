@@ -14,6 +14,7 @@ type Kost struct {
 	Address     string         `json:"address" gorm:"not null"`
 	City        string         `json:"city" gorm:"index;not null"`
 	IsPremium   bool           `json:"is_premium" gorm:"default:false"`
+	KostType    string         `json:"kost_type" gorm:"not null"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
