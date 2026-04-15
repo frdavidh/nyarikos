@@ -18,12 +18,14 @@ type Server struct {
 	authHandler *AuthHandler
 	userHandler *UserHandler
 	kostHandler *KostHandler
+	roomHandler *RoomHandler
 }
 
 func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
 	authService := services.NewAuthService(db, cfg)
 	userService := services.NewUserService(db)
 	kostService := services.NewKostService(db)
+	roomService := services.NewRoomService(db)
 
 	return &Server{
 		config: cfg,
@@ -33,6 +35,7 @@ func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
 		authHandler: NewAuthHandler(authService),
 		userHandler: NewUserHandler(userService),
 		kostHandler: NewKostHandler(kostService),
+		roomHandler: NewRoomHandler(roomService),
 	}
 }
 
@@ -49,6 +52,7 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	s.authHandler.Routes(api)
 	s.userHandler.Routes(api, s.authMiddleware())
 	s.kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
+	s.roomHandler.RoomRoutes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
 
 	return router
 }
