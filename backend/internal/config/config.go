@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 type Config struct {
@@ -14,6 +16,7 @@ type Config struct {
 	JWT      JWTConfig
 	AWS      AWSConfig
 	Upload   UploadConfig
+	OAuth2   OAuth2Config
 }
 type ServerConfig struct {
 	Port    string
@@ -46,6 +49,14 @@ type AWSConfig struct {
 type UploadConfig struct {
 	Path        string
 	MaxFileSize int64
+}
+
+type OAuth2Config struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	Scope        []string
+	Endpoint     oauth2.Endpoint
 }
 
 func Load() (*Config, error) {
@@ -83,6 +94,13 @@ func Load() (*Config, error) {
 		Upload: UploadConfig{
 			Path:        getEnv("UPLOAD_PATH", "uploads"),
 			MaxFileSize: maxUploadSize,
+		},
+		OAuth2: OAuth2Config{
+			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
+			Scope:        []string{"openid", "email", "profile"},
+			Endpoint:     google.Endpoint,
 		},
 	}, nil
 }
