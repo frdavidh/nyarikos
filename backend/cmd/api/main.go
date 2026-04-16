@@ -14,6 +14,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/database"
 	"github.com/frdavidh/nyarikos/internal/logger"
 	"github.com/frdavidh/nyarikos/internal/server"
+	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,11 +40,24 @@ func main() {
 			log.Error().Err(err).Msg("failed to close database connection")
 		}
 	}()
+
+	authService := services.NewAuthService(db, cfg)
+	userService := services.NewUserService(db)
+	kostService := services.NewKostService(db)
+	roomService := services.NewRoomService(db)
+
 	gin.SetMode(cfg.Server.GinMode)
 
-	srv := server.New(cfg, db, &log)
-	router := srv.SetupRoutes()
+	srv := server.New(
+		cfg,
+		&log,
+		authService,
+		userService,
+		kostService,
+		roomService,
+	)
 
+	router := srv.SetupRoutes()
 	httpServer := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Server.Port),
 		Handler:      router,

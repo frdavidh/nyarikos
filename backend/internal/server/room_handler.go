@@ -18,7 +18,7 @@ func NewRoomHandler(roomService services.RoomService) *RoomHandler {
 	return &RoomHandler{roomService: roomService}
 }
 
-func (h *RoomHandler) RoomRoutes(api *gin.RouterGroup, middlewares ...gin.HandlerFunc) {
+func (h *RoomHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFunc) {
 	room := api.Group("/kost/:id/room")
 	room.Use(middlewares...)
 	room.POST("/", h.CreateRoom)

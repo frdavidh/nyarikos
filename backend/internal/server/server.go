@@ -15,27 +15,26 @@ type Server struct {
 	config      *config.Config
 	db          *gorm.DB
 	logger      *zerolog.Logger
-	authHandler *AuthHandler
-	userHandler *UserHandler
-	kostHandler *KostHandler
-	roomHandler *RoomHandler
+	authService services.AuthService
+	userService services.UserService
+	kostService services.KostService
+	roomService services.RoomService
 }
 
-func New(cfg *config.Config, db *gorm.DB, logger *zerolog.Logger) *Server {
-	authService := services.NewAuthService(db, cfg)
-	userService := services.NewUserService(db)
-	kostService := services.NewKostService(db)
-	roomService := services.NewRoomService(db)
-
+func New(cfg *config.Config,
+	logger *zerolog.Logger,
+	authService services.AuthService,
+	userService services.UserService,
+	kostService services.KostService,
+	roomService services.RoomService,
+) *Server {
 	return &Server{
-		config: cfg,
-		db:     db,
-		logger: logger,
-
-		authHandler: NewAuthHandler(authService),
-		userHandler: NewUserHandler(userService),
-		kostHandler: NewKostHandler(kostService),
-		roomHandler: NewRoomHandler(roomService),
+		config:      cfg,
+		logger:      logger,
+		authService: authService,
+		userService: userService,
+		kostService: kostService,
+		roomService: roomService,
 	}
 }
 
@@ -48,11 +47,16 @@ func (s *Server) SetupRoutes() *gin.Engine {
 
 	router.GET("/health", s.healthCheck)
 
+	authHandler := NewAuthHandler(s.authService)
+	userHandler := NewUserHandler(s.userService)
+	kostHandler := NewKostHandler(s.kostService)
+	roomHandler := NewRoomHandler(s.roomService)
+
 	api := router.Group("api/v1")
-	s.authHandler.Routes(api)
-	s.userHandler.Routes(api, s.authMiddleware())
-	s.kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
-	s.roomHandler.RoomRoutes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
+	authHandler.Routes(api)
+	userHandler.Routes(api, s.authMiddleware())
+	kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
+	roomHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
 
 	return router
 }
