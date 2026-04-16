@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
@@ -23,6 +24,8 @@ func (h *AuthHandler) Routes(api *gin.RouterGroup) {
 	auth.POST("/login", h.login)
 	auth.POST("/refresh", h.refreshToken)
 	auth.POST("/logout", h.logout)
+	auth.GET("/google", h.googleLogin)
+	auth.GET("/google/callback", h.googleCallback)
 }
 
 func (h *AuthHandler) register(c *gin.Context) {
@@ -104,4 +107,25 @@ func (h *AuthHandler) logout(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, "user logged out", nil)
+}
+
+func (h *AuthHandler) googleLogin(c *gin.Context) {
+	url := h.authService.GoogleLogin()
+	c.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+func (h *AuthHandler) googleCallback(c *gin.Context) {
+	code := c.Query("code")
+	if code == "" {
+		utils.BadRequestResponse(c, "missing oauth code", nil)
+		return
+	}
+
+	response, err := h.authService.GoogleCallback(code)
+	if err != nil {
+		utils.InternalServerErrorResponse(c, "google oauth failed", err)
+		return
+	}
+
+	utils.SuccessResponse(c, "google login successful", response)
 }

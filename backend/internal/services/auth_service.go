@@ -1,14 +1,20 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/models"
 	"github.com/frdavidh/nyarikos/internal/utils"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
 )
 
@@ -27,6 +33,8 @@ type AuthService interface {
 	Login(req *dto.LoginRequest) (*dto.AuthResponse, error)
 	RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error)
 	Logout(refreshToken string) error
+	GoogleLogin() string
+	GoogleCallback(code string) (*dto.AuthResponse, error)
 }
 
 type authService struct {
@@ -162,4 +170,102 @@ func (s *authService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthRespo
 
 func (s *authService) Logout(refreshToken string) error {
 	return s.db.Model(&models.RefreshToken{}).Where("token = ?", refreshToken).Update("is_revoked", true).Error
+}
+
+func (s *authService) oauthConfig() *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     s.config.OAuth2.ClientID,
+		ClientSecret: s.config.OAuth2.ClientSecret,
+		RedirectURL:  s.config.OAuth2.RedirectURL,
+		Scopes:       s.config.OAuth2.Scope,
+		Endpoint:     google.Endpoint,
+	}
+}
+
+func (s *authService) GoogleLogin() string {
+	return s.oauthConfig().AuthCodeURL("state", oauth2.AccessTypeOffline)
+}
+
+func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
+	token, err := s.oauthConfig().Exchange(context.Background(), code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange oauth code: %w", err)
+	}
+
+	userInfo, err := fetchGoogleUserInfo(token.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch google user info: %w", err)
+	}
+
+	providerID, _ := userInfo["id"].(string)
+	email, _ := userInfo["email"].(string)
+	name, _ := userInfo["name"].(string)
+
+	if providerID == "" || email == "" {
+		return nil, errors.New("incomplete user info from google")
+	}
+
+	var social models.SocialAccount
+	err = s.db.Where("provider_name = ? AND provider_id = ?", models.ProviderGoogle, providerID).First(&social).Error
+	if err == nil {
+		var user models.User
+		if err := s.db.First(&user, social.UserID).Error; err != nil {
+			return nil, ErrUserNotFound
+		}
+		return s.generateAuthResponse(&user)
+	}
+
+	var user models.User
+	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
+		user = models.User{
+			Email:    email,
+			Name:     name,
+			Role:     models.RolePencari,
+			IsActive: true,
+		}
+		if err := s.db.Create(&user).Error; err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	social = models.SocialAccount{
+		UserID:       user.ID,
+		ProviderName: models.ProviderGoogle,
+		ProviderID:   providerID,
+	}
+	if err := s.db.Create(&social).Error; err != nil {
+		return nil, fmt.Errorf("failed to link google account: %w", err)
+	}
+
+	return s.generateAuthResponse(&user)
+}
+
+func fetchGoogleUserInfo(accessToken string) (map[string]interface{}, error) {
+	req, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v2/userinfo", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("google userinfo returned status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var userInfo map[string]interface{}
+	if err := json.Unmarshal(body, &userInfo); err != nil {
+		return nil, err
+	}
+	return userInfo, nil
 }
