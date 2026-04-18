@@ -1,4 +1,4 @@
-.PHONY: build run dev lint migrate-create migrate-up migrate-down format docker-up docker-down
+.PHONY: build run dev lint migrate migrate-up migrate-down format docker-up docker-down
 
 MIGRATIONS_DIR = db/migrations
 DB_URL = "postgresql://postgres:password@localhost:5432/nyarikos?sslmode=disable"
@@ -19,7 +19,7 @@ format:
 	@gofumpt -l -w .
 	@goimports -w .
 
-migrate-create:
+migrate:
 	migrate create -ext sql -dir $(MIGRATIONS_DIR) -seq $(name)
 
 migrate-up:
