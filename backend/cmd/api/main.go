@@ -13,6 +13,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/database"
 	"github.com/frdavidh/nyarikos/internal/logger"
+	"github.com/frdavidh/nyarikos/internal/providers"
 	"github.com/frdavidh/nyarikos/internal/server"
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
@@ -43,6 +44,8 @@ func main() {
 
 	authService := services.NewAuthService(db, cfg)
 	userService := services.NewUserService(db)
+	uploadProvider := providers.NewLocalUploadProvider(cfg.Upload.Path)
+	uploadService := services.NewUploadService(uploadProvider)
 	kostService := services.NewKostService(db)
 	roomService := services.NewRoomService(db)
 
@@ -55,6 +58,7 @@ func main() {
 		userService,
 		kostService,
 		roomService,
+		uploadService,
 	)
 
 	router := srv.SetupRoutes()

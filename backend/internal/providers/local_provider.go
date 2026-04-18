@@ -42,10 +42,10 @@ func (p *LocalUploadProvider) UploadFile(file *multipart.FileHeader, path string
 	return fmt.Sprintf("/uploads/%s", path), nil
 }
 
-func (p *LocalUploadProvider) DeleteFile(path string) (string, error) {
+func (p *LocalUploadProvider) DeleteFile(path string) error {
 	fullPath := filepath.Join(p.basePath, filepath.Clean("/"+path))
 	if !strings.HasPrefix(fullPath, filepath.Clean(p.basePath)) {
-		return "", fmt.Errorf("invalid path")
+		return fmt.Errorf("invalid path")
 	}
-	return fullPath, nil
+	return os.Remove(fullPath)
 }

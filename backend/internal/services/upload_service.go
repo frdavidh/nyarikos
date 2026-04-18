@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/frdavidh/nyarikos/internal/interfaces"
@@ -28,21 +29,15 @@ func (s *UploadService) DeleteFile(path string) error {
 func (s *UploadService) UploadKostImage(kostID uint, file *multipart.FileHeader) (string, error) {
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if !isValidImageExt(ext) {
-		return "", fmt.Errorf("invalid file type: %s", ext)
+		return "", fmt.Errorf("%w: %s", ErrInvalidFileType, ext)
 	}
 
-	path := fmt.Sprintf("products/%d", kostID, file.Filename)
+	path := fmt.Sprintf("kost/%d/%s", kostID, file.Filename)
 
 	return s.uploadProvider.UploadFile(file, path)
 }
 
 func isValidImageExt(ext string) bool {
 	validExts := []string{".jpg", ".jpeg", ".png", ".gif", ".webp"}
-	for _, validExt := range validExts {
-		if ext == validExt {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(validExts, ext)
 }
