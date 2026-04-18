@@ -49,6 +49,7 @@ type AWSConfig struct {
 type UploadConfig struct {
 	Path        string
 	MaxFileSize int64
+	Provider    string
 }
 
 type OAuth2Config struct {
@@ -86,7 +87,7 @@ func Load() (*Config, error) {
 		},
 		AWS: AWSConfig{
 			Region:          getEnv("AWS_REGION", "us-east-1"),
-			AccessKey:       getEnv("AWS_ACCESS_KEY", ""),
+			AccessKey:       getEnv("AWS_ACCESS_KEY_ID", ""),
 			SecretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY", ""),
 			S3BucketName:    getEnv("AWS_S3_BUCKET_NAME", ""),
 			S3Endpoint:      getEnv("AWS_S3_ENDPOINT", ""),
@@ -94,6 +95,7 @@ func Load() (*Config, error) {
 		Upload: UploadConfig{
 			Path:        getEnv("UPLOAD_PATH", "uploads"),
 			MaxFileSize: maxUploadSize,
+			Provider:    getEnv("UPLOAD_PROVIDER", "local"),
 		},
 		OAuth2: OAuth2Config{
 			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),

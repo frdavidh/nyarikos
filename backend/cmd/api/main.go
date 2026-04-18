@@ -12,6 +12,7 @@ import (
 
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/database"
+	"github.com/frdavidh/nyarikos/internal/interfaces"
 	"github.com/frdavidh/nyarikos/internal/logger"
 	"github.com/frdavidh/nyarikos/internal/providers"
 	"github.com/frdavidh/nyarikos/internal/server"
@@ -44,10 +45,20 @@ func main() {
 
 	authService := services.NewAuthService(db, cfg)
 	userService := services.NewUserService(db)
-	uploadProvider := providers.NewLocalUploadProvider(cfg.Upload.Path)
-	uploadService := services.NewUploadService(uploadProvider)
 	kostService := services.NewKostService(db)
 	roomService := services.NewRoomService(db)
+
+	var uploadProvider interfaces.UploadProvider
+	switch cfg.Upload.Provider {
+	case "local":
+		uploadProvider = providers.NewLocalUploadProvider(cfg.Upload.Path)
+	case "s3":
+		uploadProvider = providers.NewS3Provider(cfg)
+	default:
+		log.Fatal().Msg("invalid upload providerr")
+	}
+
+	uploadService := services.NewUploadService(uploadProvider)
 
 	gin.SetMode(cfg.Server.GinMode)
 
