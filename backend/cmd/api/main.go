@@ -47,6 +47,7 @@ func main() {
 	userService := services.NewUserService(db)
 	kostService := services.NewKostService(db)
 	roomService := services.NewRoomService(db)
+	bookingService := services.NewBookingService(db)
 
 	var uploadProvider interfaces.UploadProvider
 	switch cfg.Upload.Provider {
@@ -69,6 +70,7 @@ func main() {
 		userService,
 		kostService,
 		roomService,
+		bookingService,
 		uploadService,
 	)
 
