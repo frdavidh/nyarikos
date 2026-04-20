@@ -10,11 +10,12 @@ import (
 )
 
 type KostHandler struct {
-	kostService services.KostService
+	kostService   services.KostService
+	uploadService *services.UploadService
 }
 
-func NewKostHandler(kostService services.KostService) *KostHandler {
-	return &KostHandler{kostService: kostService}
+func NewKostHandler(kostService services.KostService, uploadService *services.UploadService) *KostHandler {
+	return &KostHandler{kostService: kostService, uploadService: uploadService}
 }
 
 func (h *KostHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFunc) {
@@ -25,6 +26,7 @@ func (h *KostHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFun
 	kost.GET("/:id", h.GetKost)
 	kost.PUT("/:id", h.UpdateKost)
 	kost.DELETE("/:id", h.DeleteKost)
+	kost.POST("/:id/images", h.AddKostImage)
 }
 
 func (h *KostHandler) CreateKost(c *gin.Context) {
@@ -141,4 +143,50 @@ func (h *KostHandler) DeleteKost(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, "Kost deleted successfully", kost)
+}
+
+func (h *KostHandler) AddKostImage(c *gin.Context) {
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		utils.BadRequestResponse(c, "no file uploaded", err)
+		return
+	}
+
+	altText := c.PostForm("alt_text")
+	if altText == "" {
+		utils.BadRequestResponse(c, "alt text is required", nil)
+		return
+	}
+
+	url, err := h.uploadService.UploadKostImage(id, file)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrInvalidFileType):
+			utils.BadRequestResponse(c, "invalid file type", err)
+		default:
+			utils.InternalServerErrorResponse(c, "failed to upload image", err)
+		}
+		return
+	}
+
+	userID := c.GetUint("user_id")
+	err = h.kostService.AddKostImage(id, userID, url, altText)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrKostNotFound):
+			utils.NotFoundResponse(c, "kost not found", nil)
+		case errors.Is(err, services.ErrUnauthorized):
+			utils.ForbiddenResponse(c, "you are not allowed to add image to this kost", nil)
+		default:
+			utils.InternalServerErrorResponse(c, "failed to add image", err)
+		}
+		return
+	}
+
+	utils.CreatedResponse(c, "Image added successfully", nil)
 }

@@ -12,13 +12,14 @@ import (
 )
 
 type Server struct {
-	config      *config.Config
-	db          *gorm.DB
-	logger      *zerolog.Logger
-	authService services.AuthService
-	userService services.UserService
-	kostService services.KostService
-	roomService services.RoomService
+	config        *config.Config
+	db            *gorm.DB
+	logger        *zerolog.Logger
+	authService   services.AuthService
+	userService   services.UserService
+	kostService   services.KostService
+	roomService   services.RoomService
+	uploadService *services.UploadService
 }
 
 func New(cfg *config.Config,
@@ -27,14 +28,16 @@ func New(cfg *config.Config,
 	userService services.UserService,
 	kostService services.KostService,
 	roomService services.RoomService,
+	uploadService *services.UploadService,
 ) *Server {
 	return &Server{
-		config:      cfg,
-		logger:      logger,
-		authService: authService,
-		userService: userService,
-		kostService: kostService,
-		roomService: roomService,
+		config:        cfg,
+		logger:        logger,
+		authService:   authService,
+		userService:   userService,
+		kostService:   kostService,
+		roomService:   roomService,
+		uploadService: uploadService,
 	}
 }
 
@@ -46,10 +49,11 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	router.Use(s.corsMiddleware())
 
 	router.GET("/health", s.healthCheck)
+	router.Static("/uploads", "./uploads")
 
 	authHandler := NewAuthHandler(s.authService)
 	userHandler := NewUserHandler(s.userService)
-	kostHandler := NewKostHandler(s.kostService)
+	kostHandler := NewKostHandler(s.kostService, s.uploadService)
 	roomHandler := NewRoomHandler(s.roomService)
 
 	api := router.Group("api/v1")
