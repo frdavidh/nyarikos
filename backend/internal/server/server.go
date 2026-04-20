@@ -12,14 +12,15 @@ import (
 )
 
 type Server struct {
-	config        *config.Config
-	db            *gorm.DB
-	logger        *zerolog.Logger
-	authService   services.AuthService
-	userService   services.UserService
-	kostService   services.KostService
-	roomService   services.RoomService
-	uploadService *services.UploadService
+	config         *config.Config
+	db             *gorm.DB
+	logger         *zerolog.Logger
+	authService    services.AuthService
+	userService    services.UserService
+	kostService    services.KostService
+	roomService    services.RoomService
+	bookingService services.BookingService
+	uploadService  *services.UploadService
 }
 
 func New(cfg *config.Config,
@@ -28,16 +29,18 @@ func New(cfg *config.Config,
 	userService services.UserService,
 	kostService services.KostService,
 	roomService services.RoomService,
+	bookingService services.BookingService,
 	uploadService *services.UploadService,
 ) *Server {
 	return &Server{
-		config:        cfg,
-		logger:        logger,
-		authService:   authService,
-		userService:   userService,
-		kostService:   kostService,
-		roomService:   roomService,
-		uploadService: uploadService,
+		config:         cfg,
+		logger:         logger,
+		authService:    authService,
+		userService:    userService,
+		kostService:    kostService,
+		roomService:    roomService,
+		bookingService: bookingService,
+		uploadService:  uploadService,
 	}
 }
 
@@ -55,12 +58,14 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	userHandler := NewUserHandler(s.userService)
 	kostHandler := NewKostHandler(s.kostService, s.uploadService)
 	roomHandler := NewRoomHandler(s.roomService)
+	bookingHandler := NewBookingHandler(s.bookingService)
 
 	api := router.Group("api/v1")
 	authHandler.Routes(api)
 	userHandler.Routes(api, s.authMiddleware())
 	kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
 	roomHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
+	bookingHandler.Routes(api, s.authMiddleware())
 
 	return router
 }
