@@ -33,3 +33,8 @@ docker-up:
 
 docker-down:
 	docker compose -f docker/docker-compose.yml down
+
+test:
+# 	go test -coverprofile=coverage.out ./internal/...
+# 	go tool cover -html=coverage.out
+	go test -cover ./...
