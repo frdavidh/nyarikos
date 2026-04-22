@@ -30,6 +30,7 @@ vendor/
 *.swp
 *.swo
 *~
+/tmp
 
 # IDE
 .vscode/
