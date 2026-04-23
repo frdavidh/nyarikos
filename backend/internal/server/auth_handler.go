@@ -28,6 +28,16 @@ func (h *AuthHandler) Routes(api *gin.RouterGroup) {
 	auth.GET("/google/callback", h.googleCallback)
 }
 
+// @Tags			Auth
+// @Summary		Register a new user
+// @Description	Register a new user with email, password, and optional details
+// @Accept			json
+// @Produce		json
+// @Param			request	body		dto.RegisterRequest						true	"Register Request"
+// @Success		201		{object}	utils.Response{data=dto.AuthResponse}	"User created"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/auth/register [post]
 func (h *AuthHandler) register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,6 +59,17 @@ func (h *AuthHandler) register(c *gin.Context) {
 	utils.CreatedResponse(c, "user created", response)
 }
 
+// @Tags			Auth
+// @Summary		Login user
+// @Description	Login with email and password to get access and refresh tokens
+// @Accept			json
+// @Produce		json
+// @Param			request	body		dto.LoginRequest						true	"Login Request"
+// @Success		200		{object}	utils.Response{data=dto.AuthResponse}	"User logged in"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Invalid credentials"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/auth/login [post]
 func (h *AuthHandler) login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -71,6 +92,17 @@ func (h *AuthHandler) login(c *gin.Context) {
 	utils.SuccessResponse(c, "user logged in", response)
 }
 
+// @Tags			Auth
+// @Summary		Refresh access token
+// @Description	Get a new access token using a refresh token
+// @Accept			json
+// @Produce		json
+// @Param			request	body		dto.RefreshTokenRequest					true	"Refresh Token Request"
+// @Success		200		{object}	utils.Response{data=dto.AuthResponse}	"Token refreshed"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Invalid or expired refresh token"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/auth/refresh [post]
 func (h *AuthHandler) refreshToken(c *gin.Context) {
 	var req dto.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -94,6 +126,16 @@ func (h *AuthHandler) refreshToken(c *gin.Context) {
 	utils.SuccessResponse(c, "token refreshed", response)
 }
 
+// @Tags			Auth
+// @Summary		Logout user
+// @Description	Logout user and revoke refresh token
+// @Accept			json
+// @Produce		json
+// @Param			request	body		dto.RefreshTokenRequest	true	"Logout Request"
+// @Success		200		{object}	utils.Response			"User logged out"
+// @Failure		400		{object}	utils.Response			"Invalid request"
+// @Failure		500		{object}	utils.Response			"Internal server error"
+// @Router			/auth/logout [post]
 func (h *AuthHandler) logout(c *gin.Context) {
 	var req dto.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -109,11 +151,26 @@ func (h *AuthHandler) logout(c *gin.Context) {
 	utils.SuccessResponse(c, "user logged out", nil)
 }
 
+// @Tags			Auth
+// @Summary		Google OAuth login
+// @Description	Redirect to Google OAuth login page
+// @Produce		json
+// @Success		307	"Redirect to Google"
+// @Router			/auth/google [get]
 func (h *AuthHandler) googleLogin(c *gin.Context) {
 	url := h.authService.GoogleLogin()
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
+// @Tags			Auth
+// @Summary		Google OAuth callback
+// @Description	Handle Google OAuth callback and authenticate user
+// @Produce		json
+// @Param			code	query		string									true	"OAuth authorization code"
+// @Success		200		{object}	utils.Response{data=dto.AuthResponse}	"Google login successful"
+// @Failure		400		{object}	utils.Response							"Missing OAuth code"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/auth/google/callback [get]
 func (h *AuthHandler) googleCallback(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {

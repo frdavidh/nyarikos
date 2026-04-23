@@ -29,6 +29,19 @@ func (h *KostHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFun
 	kost.POST("/:id/images", h.AddKostImage)
 }
 
+// @Tags			Kost
+// @Summary		Create a new kost
+// @Description	Create a new kost listing (requires pemilik role)
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		dto.CreateKostRequest					true	"Create Kost Request"
+// @Success		201		{object}	utils.Response{data=dto.KostResponse}	"Kost created successfully"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Unauthorized"
+// @Failure		403		{object}	utils.Response							"Forbidden"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/kost/ [post]
 func (h *KostHandler) CreateKost(c *gin.Context) {
 	var req dto.CreateKostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -51,6 +64,17 @@ func (h *KostHandler) CreateKost(c *gin.Context) {
 	utils.CreatedResponse(c, "Kost created successfully", kost)
 }
 
+// @Tags			Kost
+// @Summary		Get all kosts
+// @Description	Get a paginated list of all kosts
+// @Produce		json
+// @Security		BearerAuth
+// @Param			page	query		int													false	"Page number"		default(1)
+// @Param			limit	query		int													false	"Items per page"	default(10)
+// @Success		200		{object}	utils.PaginatedResponse{data=[]dto.KostResponse}	"Kost fetched successfully"
+// @Failure		401		{object}	utils.Response										"Unauthorized"
+// @Failure		500		{object}	utils.Response										"Internal server error"
+// @Router			/kost/ [get]
 func (h *KostHandler) GetAllKost(c *gin.Context) {
 	page, limit := parsePagination(c)
 
@@ -73,6 +97,17 @@ func (h *KostHandler) GetAllKost(c *gin.Context) {
 	})
 }
 
+// @Tags			Kost
+// @Summary		Get kost by ID
+// @Description	Get detailed information about a specific kost
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id	path		int										true	"Kost ID"
+// @Success		200	{object}	utils.Response{data=dto.KostResponse}	"Kost fetched successfully"
+// @Failure		401	{object}	utils.Response							"Unauthorized"
+// @Failure		404	{object}	utils.Response							"Kost not found"
+// @Failure		500	{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id} [get]
 func (h *KostHandler) GetKost(c *gin.Context) {
 	id, ok := parseUintParam(c, "id")
 	if !ok {
@@ -93,6 +128,21 @@ func (h *KostHandler) GetKost(c *gin.Context) {
 	utils.SuccessResponse(c, "Kost fetched successfully", kost)
 }
 
+// @Tags			Kost
+// @Summary		Update kost
+// @Description	Update a kost listing (requires ownership)
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		int										true	"Kost ID"
+// @Param			request	body		dto.UpdateKostRequest					true	"Update Kost Request"
+// @Success		200		{object}	utils.Response{data=dto.KostResponse}	"Kost updated successfully"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Unauthorized"
+// @Failure		403		{object}	utils.Response							"Forbidden"
+// @Failure		404		{object}	utils.Response							"Kost not found"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id} [put]
 func (h *KostHandler) UpdateKost(c *gin.Context) {
 	kostID, ok := parseUintParam(c, "id")
 	if !ok {
@@ -122,6 +172,18 @@ func (h *KostHandler) UpdateKost(c *gin.Context) {
 	utils.SuccessResponse(c, "Kost updated successfully", kost)
 }
 
+// @Tags			Kost
+// @Summary		Delete kost
+// @Description	Delete a kost listing (requires ownership)
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id	path		int										true	"Kost ID"
+// @Success		200	{object}	utils.Response{data=dto.KostResponse}	"Kost deleted successfully"
+// @Failure		401	{object}	utils.Response							"Unauthorized"
+// @Failure		403	{object}	utils.Response							"Forbidden"
+// @Failure		404	{object}	utils.Response							"Kost not found"
+// @Failure		500	{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id} [delete]
 func (h *KostHandler) DeleteKost(c *gin.Context) {
 	kostID, ok := parseUintParam(c, "id")
 	if !ok {
@@ -145,6 +207,22 @@ func (h *KostHandler) DeleteKost(c *gin.Context) {
 	utils.SuccessResponse(c, "Kost deleted successfully", kost)
 }
 
+// @Tags			Kost
+// @Summary		Add image to kost
+// @Description	Upload and add an image to a kost listing (requires ownership)
+// @Accept			multipart/form-data
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id			path		int				true	"Kost ID"
+// @Param			image		formData	file			true	"Image file"
+// @Param			alt_text	formData	string			true	"Alt text for the image"
+// @Success		201			{object}	utils.Response	"Image added successfully"
+// @Failure		400			{object}	utils.Response	"Invalid request"
+// @Failure		401			{object}	utils.Response	"Unauthorized"
+// @Failure		403			{object}	utils.Response	"Forbidden"
+// @Failure		404			{object}	utils.Response	"Kost not found"
+// @Failure		500			{object}	utils.Response	"Internal server error"
+// @Router			/kost/{id}/images [post]
 func (h *KostHandler) AddKostImage(c *gin.Context) {
 	id, ok := parseUintParam(c, "id")
 	if !ok {

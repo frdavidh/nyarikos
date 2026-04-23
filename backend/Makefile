@@ -1,4 +1,4 @@
-.PHONY: build run dev lint migrate migrate-up migrate-down format docker-up docker-down
+.PHONY: build run dev lint migrate migrate-up migrate-down format docker-up docker-down test swag
 
 MIGRATIONS_DIR = db/migrations
 DB_URL = "postgresql://postgres:password@localhost:5432/nyarikos?sslmode=disable"
@@ -9,8 +9,8 @@ build: migrate-up
 run: migrate-up
 	go run ./cmd/api
 
-dev: migrate-up
-	go run ./cmd/api
+dev:
+	air
 
 lint: format
 	golangci-lint run ./...
@@ -38,3 +38,7 @@ test:
 # 	go test -coverprofile=coverage.out ./internal/...
 # 	go tool cover -html=coverage.out
 	go test -cover ./...
+
+swag:
+	swag fmt -g cmd/api/main.go
+	swag init -g main.go --dir ./cmd/api,./internal/server,./internal/dto,./internal/models,./internal/utils --output ./docs

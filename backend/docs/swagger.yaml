@@ -1,0 +1,1444 @@
+basePath: /api/v1
+definitions:
+  dto.AuthResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.BookingResponse:
+    properties:
+      booking_code:
+        example: BK-20240601-ABC123
+        type: string
+      created_at:
+        example: "2024-05-15T10:30:00Z"
+        type: string
+      durations_months:
+        example: 3
+        type: integer
+      end_date:
+        example: "2024-09-01T00:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      room_id:
+        example: 1
+        type: integer
+      start_date:
+        example: "2024-06-01T00:00:00Z"
+        type: string
+      status:
+        example: pending
+        type: string
+      total_price:
+        example: 4500000
+        type: number
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  dto.CreateBookingRequest:
+    properties:
+      end_date:
+        example: "2024-09-01"
+        type: string
+      room_id:
+        example: 1
+        type: integer
+      start_date:
+        example: "2024-06-01"
+        type: string
+    required:
+    - end_date
+    - room_id
+    - start_date
+    type: object
+  dto.CreateFacilityRequest:
+    properties:
+      icon_url:
+        example: https://example.com/ac-icon.svg
+        type: string
+      name:
+        example: AC
+        type: string
+    required:
+    - name
+    type: object
+  dto.CreateKostRequest:
+    properties:
+      address:
+        example: Jl. Merdeka No. 1
+        type: string
+      city:
+        example: Jakarta
+        type: string
+      description:
+        example: A comfortable kost near the university
+        type: string
+      is_premium:
+        example: true
+        type: boolean
+      kost_type:
+        example: putra
+        type: string
+      name:
+        example: Kost Bahagia
+        maxLength: 255
+        type: string
+    required:
+    - address
+    - city
+    - kost_type
+    - name
+    type: object
+  dto.CreateRoomFacilityRequest:
+    properties:
+      facility_id:
+        example: 1
+        type: integer
+      room_id:
+        example: 1
+        type: integer
+    required:
+    - facility_id
+    - room_id
+    type: object
+  dto.CreateRoomRequest:
+    properties:
+      facility_ids:
+        items:
+          type: integer
+        type: array
+      price_per_month:
+        example: "1500000.00"
+        type: string
+      room_type:
+        example: single
+        type: string
+      total_rooms:
+        example: 5
+        type: integer
+    required:
+    - price_per_month
+    - room_type
+    - total_rooms
+    type: object
+  dto.DeleteRoomFacilityRequest:
+    properties:
+      facility_id:
+        example: 1
+        type: integer
+      room_id:
+        example: 1
+        type: integer
+    required:
+    - facility_id
+    - room_id
+    type: object
+  dto.FacilityResponse:
+    properties:
+      icon_url:
+        example: https://example.com/wifi-icon.svg
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: WiFi
+        type: string
+    type: object
+  dto.ImageResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      image_url:
+        example: https://example.com/image.jpg
+        type: string
+      is_main:
+        example: true
+        type: boolean
+    type: object
+  dto.KostResponse:
+    properties:
+      address:
+        example: Jl. Merdeka No. 1
+        type: string
+      city:
+        example: Jakarta
+        type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      description:
+        example: A comfortable kost
+        type: string
+      id:
+        example: 1
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/dto.ImageResponse'
+        type: array
+      is_premium:
+        example: true
+        type: boolean
+      kost_type:
+        example: putra
+        type: string
+      name:
+        example: Kost Bahagia
+        type: string
+      owner_id:
+        example: 1
+        type: integer
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
+        minLength: 6
+        type: string
+      phone_number:
+        example: "+6281234567890"
+        type: string
+      role:
+        enum:
+        - pencari
+        - pemilik
+        example: pencari
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RoomFacilityResponse:
+    properties:
+      facility_id:
+        example: 1
+        type: integer
+      room_id:
+        example: 1
+        type: integer
+    type: object
+  dto.RoomResponse:
+    properties:
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      facilities:
+        items:
+          $ref: '#/definitions/dto.FacilityResponse'
+        type: array
+      id:
+        example: 1
+        type: integer
+      images:
+        items:
+          $ref: '#/definitions/dto.ImageResponse'
+        type: array
+      kost_id:
+        example: 1
+        type: integer
+      price_per_month:
+        example: "1500000.00"
+        type: string
+      room_type:
+        example: single
+        type: string
+      total_rooms:
+        example: 5
+        type: integer
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.UpdateFacilityRequest:
+    properties:
+      icon_url:
+        example: https://example.com/ac-icon.svg
+        type: string
+      name:
+        example: Air Conditioning
+        type: string
+    type: object
+  dto.UpdateKostRequest:
+    properties:
+      address:
+        example: Jl. Merdeka No. 2
+        type: string
+      city:
+        example: Jakarta
+        type: string
+      description:
+        example: Updated description
+        type: string
+      is_premium:
+        example: false
+        type: boolean
+      kost_type:
+        example: putri
+        type: string
+      name:
+        example: Kost Bahagia
+        maxLength: 255
+        type: string
+    type: object
+  dto.UpdateProfileRequest:
+    properties:
+      name:
+        example: John Doe
+        type: string
+      phone_number:
+        example: "+6281234567890"
+        type: string
+    type: object
+  dto.UpdateRoomRequest:
+    properties:
+      facility_ids:
+        items:
+          type: integer
+        type: array
+      price_per_month:
+        example: "2000000.00"
+        type: string
+      room_type:
+        example: double
+        type: string
+      total_rooms:
+        example: 3
+        type: integer
+    type: object
+  dto.UserResponse:
+    properties:
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: John Doe
+        type: string
+      phone_number:
+        example: "+6281234567890"
+        type: string
+      role:
+        example: pencari
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  utils.PaginatedResponse:
+    properties:
+      data: {}
+      error:
+        type: string
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/utils.PaginationMeta'
+      success:
+        type: boolean
+    type: object
+  utils.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  utils.Response:
+    properties:
+      data: {}
+      error:
+        type: string
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for Nyarikos - Kost Management System
+  title: Nyarikos API
+  version: "1.0"
+paths:
+  /auth/google:
+    get:
+      description: Redirect to Google OAuth login page
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Redirect to Google
+      summary: Google OAuth login
+      tags:
+      - Auth
+  /auth/google/callback:
+    get:
+      description: Handle Google OAuth callback and authenticate user
+      parameters:
+      - description: OAuth authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Google login successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Missing OAuth code
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Google OAuth callback
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with email and password to get access and refresh tokens
+      parameters:
+      - description: Login Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User logged in
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user and revoke refresh token
+      parameters:
+      - description: Logout Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User logged out
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a refresh token
+      parameters:
+      - description: Refresh Token Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email, password, and optional details
+      parameters:
+      - description: Register Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Register a new user
+      tags:
+      - Auth
+  /booking/:
+    post:
+      consumes:
+      - application/json
+      description: Create a new room booking
+      parameters:
+      - description: Create Booking Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Booking created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookingResponse'
+              type: object
+        "400":
+          description: Invalid request or no available rooms
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new booking
+      tags:
+      - Booking
+  /facilities/:
+    get:
+      description: Get a list of all available facilities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Facilities retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.FacilityResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all facilities
+      tags:
+      - Facility
+    post:
+      consumes:
+      - application/json
+      description: Create a new facility type
+      parameters:
+      - description: Create Facility Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateFacilityRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Facility created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FacilityResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new facility
+      tags:
+      - Facility
+  /facilities/{facility_id}:
+    delete:
+      description: Delete a facility type
+      parameters:
+      - description: Facility ID
+        in: path
+        name: facility_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Facility deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Facility not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete facility
+      tags:
+      - Facility
+    put:
+      consumes:
+      - application/json
+      description: Update a facility type
+      parameters:
+      - description: Facility ID
+        in: path
+        name: facility_id
+        required: true
+        type: integer
+      - description: Update Facility Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateFacilityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Facility updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.FacilityResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Facility not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Update facility
+      tags:
+      - Facility
+  /kost/:
+    get:
+      description: Get a paginated list of all kosts
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kost fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.KostResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get all kosts
+      tags:
+      - Kost
+    post:
+      consumes:
+      - application/json
+      description: Create a new kost listing (requires pemilik role)
+      parameters:
+      - description: Create Kost Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateKostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Kost created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.KostResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new kost
+      tags:
+      - Kost
+  /kost/{id}:
+    delete:
+      description: Delete a kost listing (requires ownership)
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kost deleted successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.KostResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Kost not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete kost
+      tags:
+      - Kost
+    get:
+      description: Get detailed information about a specific kost
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kost fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.KostResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Kost not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get kost by ID
+      tags:
+      - Kost
+    put:
+      consumes:
+      - application/json
+      description: Update a kost listing (requires ownership)
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Kost Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateKostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kost updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.KostResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Kost not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Update kost
+      tags:
+      - Kost
+  /kost/{id}/images:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload and add an image to a kost listing (requires ownership)
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Image file
+        in: formData
+        name: image
+        required: true
+        type: file
+      - description: Alt text for the image
+        in: formData
+        name: alt_text
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Image added successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Kost not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Add image to kost
+      tags:
+      - Kost
+  /kost/{id}/room/:
+    get:
+      description: Get all rooms belonging to a specific kost
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rooms retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.RoomResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get rooms by kost ID
+      tags:
+      - Room
+    post:
+      consumes:
+      - application/json
+      description: Create a new room for a specific kost
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Create Room Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Room created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RoomResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new room
+      tags:
+      - Room
+  /kost/{id}/room/{room_id}:
+    delete:
+      description: Delete a room
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room ID
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room deleted successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete room
+      tags:
+      - Room
+    get:
+      description: Get detailed information about a specific room
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room ID
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RoomResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get room by ID
+      tags:
+      - Room
+    put:
+      consumes:
+      - application/json
+      description: Update a room's information
+      parameters:
+      - description: Kost ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Room ID
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      - description: Update Room Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RoomResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Update room
+      tags:
+      - Room
+  /room-facilities/:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a facility from a specific room
+      parameters:
+      - description: Delete Room Facility Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteRoomFacilityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Room facility deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Room or facility not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove facility from room
+      tags:
+      - Room Facility
+    post:
+      consumes:
+      - application/json
+      description: Add a facility to a specific room
+      parameters:
+      - description: Create Room Facility Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRoomFacilityRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Room facility created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RoomFacilityResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Room not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Add facility to room
+      tags:
+      - Room Facility
+  /user/profile:
+    get:
+      description: Get the profile of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Update the profile of the currently authenticated user
+      parameters:
+      - description: Update Profile Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - User
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/frdavidh/nyarikos/docs"
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/database"
 	"github.com/frdavidh/nyarikos/internal/interfaces"
@@ -19,6 +20,15 @@ import (
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 )
+
+//	@title						Nyarikos API
+//	@version					1.0
+//	@description				API for Nyarikos - Kost Management System
+//	@host						localhost:8080
+//	@BasePath					/api/v1
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
 
 func main() {
 	log := logger.New()
@@ -60,6 +70,9 @@ func main() {
 	}
 
 	uploadService := services.NewUploadService(uploadProvider)
+
+	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	gin.SetMode(cfg.Server.GinMode)
 
