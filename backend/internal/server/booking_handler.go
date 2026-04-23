@@ -23,6 +23,19 @@ func (h *BookingHandler) Routes(api *gin.RouterGroup, middlewares ...gin.Handler
 	booking.POST("/", h.CreateBooking)
 }
 
+// @Tags			Booking
+// @Summary		Create a new booking
+// @Description	Create a new room booking
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		dto.CreateBookingRequest					true	"Create Booking Request"
+// @Success		201		{object}	utils.Response{data=dto.BookingResponse}	"Booking created successfully"
+// @Failure		400		{object}	utils.Response								"Invalid request or no available rooms"
+// @Failure		401		{object}	utils.Response								"Unauthorized"
+// @Failure		404		{object}	utils.Response								"Room not found"
+// @Failure		500		{object}	utils.Response								"Internal server error"
+// @Router			/booking/ [post]
 func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	var req dto.CreateBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

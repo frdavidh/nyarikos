@@ -40,6 +40,19 @@ func (h *RoomHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFun
 	roomFacility.DELETE("/", h.DeleteRoomFacility)
 }
 
+// @Tags			Room
+// @Summary		Create a new room
+// @Description	Create a new room for a specific kost
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		int										true	"Kost ID"
+// @Param			request	body		dto.CreateRoomRequest					true	"Create Room Request"
+// @Success		201		{object}	utils.Response{data=dto.RoomResponse}	"Room created successfully"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Unauthorized"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id}/room/ [post]
 func (h *RoomHandler) CreateRoom(c *gin.Context) {
 	var req dto.CreateRoomRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,6 +74,16 @@ func (h *RoomHandler) CreateRoom(c *gin.Context) {
 	utils.CreatedResponse(c, "Room created successfully", room)
 }
 
+// @Tags			Room
+// @Summary		Get rooms by kost ID
+// @Description	Get all rooms belonging to a specific kost
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id	path		int										true	"Kost ID"
+// @Success		200	{object}	utils.Response{data=[]dto.RoomResponse}	"Rooms retrieved successfully"
+// @Failure		401	{object}	utils.Response							"Unauthorized"
+// @Failure		500	{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id}/room/ [get]
 func (h *RoomHandler) GetRoomByKostID(c *gin.Context) {
 	kostID, ok := parseUintParam(c, "id")
 	if !ok {
@@ -76,6 +99,18 @@ func (h *RoomHandler) GetRoomByKostID(c *gin.Context) {
 	utils.SuccessResponse(c, "Rooms retrieved successfully", rooms)
 }
 
+// @Tags			Room
+// @Summary		Get room by ID
+// @Description	Get detailed information about a specific room
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		int										true	"Kost ID"
+// @Param			room_id	path		int										true	"Room ID"
+// @Success		200		{object}	utils.Response{data=dto.RoomResponse}	"Room retrieved successfully"
+// @Failure		401		{object}	utils.Response							"Unauthorized"
+// @Failure		404		{object}	utils.Response							"Room not found"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id}/room/{room_id} [get]
 func (h *RoomHandler) GetRoomByID(c *gin.Context) {
 	roomID, ok := parseUintParam(c, "room_id")
 	if !ok {
@@ -96,6 +131,21 @@ func (h *RoomHandler) GetRoomByID(c *gin.Context) {
 	utils.SuccessResponse(c, "Room retrieved successfully", room)
 }
 
+// @Tags			Room
+// @Summary		Update room
+// @Description	Update a room's information
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		int										true	"Kost ID"
+// @Param			room_id	path		int										true	"Room ID"
+// @Param			request	body		dto.UpdateRoomRequest					true	"Update Room Request"
+// @Success		200		{object}	utils.Response{data=dto.RoomResponse}	"Room updated successfully"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Unauthorized"
+// @Failure		404		{object}	utils.Response							"Room not found"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/kost/{id}/room/{room_id} [put]
 func (h *RoomHandler) UpdateRoom(c *gin.Context) {
 	roomID, ok := parseUintParam(c, "room_id")
 	if !ok {
@@ -122,6 +172,18 @@ func (h *RoomHandler) UpdateRoom(c *gin.Context) {
 	utils.SuccessResponse(c, "Room updated successfully", room)
 }
 
+// @Tags			Room
+// @Summary		Delete room
+// @Description	Delete a room
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		int				true	"Kost ID"
+// @Param			room_id	path		int				true	"Room ID"
+// @Success		200		{object}	utils.Response	"Room deleted successfully"
+// @Failure		401		{object}	utils.Response	"Unauthorized"
+// @Failure		404		{object}	utils.Response	"Room not found"
+// @Failure		500		{object}	utils.Response	"Internal server error"
+// @Router			/kost/{id}/room/{room_id} [delete]
 func (h *RoomHandler) DeleteRoom(c *gin.Context) {
 	roomID, ok := parseUintParam(c, "room_id")
 	if !ok {
@@ -142,6 +204,16 @@ func (h *RoomHandler) DeleteRoom(c *gin.Context) {
 }
 
 // ############################################################################################################
+//
+//	@Tags			Facility
+//	@Summary		Get all facilities
+//	@Description	Get a list of all available facilities
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	utils.Response{data=[]dto.FacilityResponse}	"Facilities retrieved successfully"
+//	@Failure		401	{object}	utils.Response								"Unauthorized"
+//	@Failure		500	{object}	utils.Response								"Internal server error"
+//	@Router			/facilities/ [get]
 func (h *RoomHandler) GetAllFacilities(c *gin.Context) {
 	facilities, err := h.roomService.GetAllFacilities()
 	if err != nil {
@@ -151,6 +223,18 @@ func (h *RoomHandler) GetAllFacilities(c *gin.Context) {
 	utils.SuccessResponse(c, "Facilities retrieved successfully", facilities)
 }
 
+// @Tags			Facility
+// @Summary		Create a new facility
+// @Description	Create a new facility type
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		dto.CreateFacilityRequest					true	"Create Facility Request"
+// @Success		201		{object}	utils.Response{data=dto.FacilityResponse}	"Facility created successfully"
+// @Failure		400		{object}	utils.Response								"Invalid request"
+// @Failure		401		{object}	utils.Response								"Unauthorized"
+// @Failure		500		{object}	utils.Response								"Internal server error"
+// @Router			/facilities/ [post]
 func (h *RoomHandler) CreateFacility(c *gin.Context) {
 	var req dto.CreateFacilityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -167,6 +251,20 @@ func (h *RoomHandler) CreateFacility(c *gin.Context) {
 	utils.CreatedResponse(c, "Facility created successfully", facility)
 }
 
+// @Tags			Facility
+// @Summary		Update facility
+// @Description	Update a facility type
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			facility_id	path		int											true	"Facility ID"
+// @Param			request		body		dto.UpdateFacilityRequest					true	"Update Facility Request"
+// @Success		200			{object}	utils.Response{data=dto.FacilityResponse}	"Facility updated successfully"
+// @Failure		400			{object}	utils.Response								"Invalid request"
+// @Failure		401			{object}	utils.Response								"Unauthorized"
+// @Failure		404			{object}	utils.Response								"Facility not found"
+// @Failure		500			{object}	utils.Response								"Internal server error"
+// @Router			/facilities/{facility_id} [put]
 func (h *RoomHandler) UpdateFacility(c *gin.Context) {
 	facilityID, ok := parseUintParam(c, "facility_id")
 	if !ok {
@@ -193,6 +291,17 @@ func (h *RoomHandler) UpdateFacility(c *gin.Context) {
 	utils.SuccessResponse(c, "Facility updated successfully", facility)
 }
 
+// @Tags			Facility
+// @Summary		Delete facility
+// @Description	Delete a facility type
+// @Produce		json
+// @Security		BearerAuth
+// @Param			facility_id	path		int					true	"Facility ID"
+// @Success		200			{object}	map[string]string	"Facility deleted successfully"
+// @Failure		401			{object}	utils.Response		"Unauthorized"
+// @Failure		404			{object}	utils.Response		"Facility not found"
+// @Failure		500			{object}	utils.Response		"Internal server error"
+// @Router			/facilities/{facility_id} [delete]
 func (h *RoomHandler) DeleteFacility(c *gin.Context) {
 	facilityID, ok := parseUintParam(c, "facility_id")
 	if !ok {
@@ -213,6 +322,20 @@ func (h *RoomHandler) DeleteFacility(c *gin.Context) {
 }
 
 // ############################################################################################################
+//
+//	@Tags			Room Facility
+//	@Summary		Add facility to room
+//	@Description	Add a facility to a specific room
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		dto.CreateRoomFacilityRequest					true	"Create Room Facility Request"
+//	@Success		201		{object}	utils.Response{data=dto.RoomFacilityResponse}	"Room facility created successfully"
+//	@Failure		400		{object}	utils.Response									"Invalid request"
+//	@Failure		401		{object}	utils.Response									"Unauthorized"
+//	@Failure		404		{object}	utils.Response									"Room not found"
+//	@Failure		500		{object}	utils.Response									"Internal server error"
+//	@Router			/room-facilities/ [post]
 func (h *RoomHandler) CreateRoomFacility(c *gin.Context) {
 	var req dto.CreateRoomFacilityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -234,6 +357,19 @@ func (h *RoomHandler) CreateRoomFacility(c *gin.Context) {
 	utils.CreatedResponse(c, "Room facility created successfully", roomFacility)
 }
 
+// @Tags			Room Facility
+// @Summary		Remove facility from room
+// @Description	Remove a facility from a specific room
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		dto.DeleteRoomFacilityRequest	true	"Delete Room Facility Request"
+// @Success		200		{object}	map[string]string				"Room facility deleted successfully"
+// @Failure		400		{object}	utils.Response					"Invalid request"
+// @Failure		401		{object}	utils.Response					"Unauthorized"
+// @Failure		404		{object}	utils.Response					"Room or facility not found"
+// @Failure		500		{object}	utils.Response					"Internal server error"
+// @Router			/room-facilities/ [delete]
 func (h *RoomHandler) DeleteRoomFacility(c *gin.Context) {
 	var req dto.DeleteRoomFacilityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

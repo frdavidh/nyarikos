@@ -22,6 +22,15 @@ func (h *UserHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFun
 	user.PUT("/profile", h.UpdateProfile)
 }
 
+// @Tags			User
+// @Summary		Get user profile
+// @Description	Get the profile of the currently authenticated user
+// @Produce		json
+// @Security		BearerAuth
+// @Success		200	{object}	utils.Response{data=dto.UserResponse}	"Success"
+// @Failure		401	{object}	utils.Response							"Unauthorized"
+// @Failure		404	{object}	utils.Response							"User not found"
+// @Router			/user/profile [get]
 func (h *UserHandler) GetProfile(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	profile, err := h.userService.GetProfile(userID)
@@ -33,6 +42,18 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	utils.SuccessResponse(c, "Success", profile)
 }
 
+// @Tags			User
+// @Summary		Update user profile
+// @Description	Update the profile of the currently authenticated user
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			request	body		dto.UpdateProfileRequest				true	"Update Profile Request"
+// @Success		200		{object}	utils.Response{data=dto.UserResponse}	"Profile updated successfully"
+// @Failure		400		{object}	utils.Response							"Invalid request"
+// @Failure		401		{object}	utils.Response							"Unauthorized"
+// @Failure		500		{object}	utils.Response							"Internal server error"
+// @Router			/user/profile [put]
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	var req dto.UpdateProfileRequest
