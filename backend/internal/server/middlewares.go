@@ -18,14 +18,14 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			utils.UnauthorizedResponse(c, "Invalid authorization header", nil)
+			utils.UnauthorizedResponse(c, "invalid authorization header", nil)
 			c.Abort()
 			return
 		}
 
-		claims, err := utils.ValidateToken(tokenParts[1], []byte(s.config.JWT.Secret))
+		claims, err := utils.ValidateToken(tokenParts[1], s.config.JWT.Secret)
 		if err != nil {
-			utils.UnauthorizedResponse(c, "Invalid token", err)
+			utils.UnauthorizedResponse(c, "invalid token", err)
 			c.Abort()
 			return
 		}

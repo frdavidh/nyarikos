@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/frdavidh/nyarikos/internal/config"
@@ -85,12 +85,18 @@ func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse
 	}, nil
 }
 
-func (s *authService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, error) {
-	var existingUser models.User
-	if err := s.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		return nil, ErrEmailAlreadyExists
+func isDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
 	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unique constraint failed") || strings.Contains(msg, "duplicate key value violates unique constraint")
+}
 
+func (s *authService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, error) {
 	hashedPassword, err := utils.HashPassword(req.Password, utils.DefaultParams)
 	if err != nil {
 		return nil, err
@@ -110,7 +116,10 @@ func (s *authService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, err
 	}
 
 	if err := s.db.Create(&user).Error; err != nil {
-		return nil, err
+		if isDuplicateKeyError(err) {
+			return nil, ErrEmailAlreadyExists
+		}
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
 	return s.generateAuthResponse(&user)
@@ -138,7 +147,7 @@ func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, error) {
 }
 
 func (s *authService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
-	claims, err := utils.ValidateToken(req.RefreshToken, []byte(s.config.JWT.Secret))
+	claims, err := utils.ValidateToken(req.RefreshToken, s.config.JWT.Secret)
 	if err != nil {
 		return nil, ErrInvalidRefreshToken
 	}
@@ -186,6 +195,12 @@ func (s *authService) GoogleLogin() string {
 	return s.oauthConfig().AuthCodeURL("state", oauth2.AccessTypeOffline)
 }
 
+type googleUserInfo struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 	token, err := s.oauthConfig().Exchange(context.Background(), code)
 	if err != nil {
@@ -197,16 +212,12 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 		return nil, fmt.Errorf("failed to fetch google user info: %w", err)
 	}
 
-	providerID, _ := userInfo["id"].(string)
-	email, _ := userInfo["email"].(string)
-	name, _ := userInfo["name"].(string)
-
-	if providerID == "" || email == "" {
+	if userInfo.ID == "" || userInfo.Email == "" {
 		return nil, errors.New("incomplete user info from google")
 	}
 
 	var social models.SocialAccount
-	err = s.db.Where("provider_name = ? AND provider_id = ?", models.ProviderGoogle, providerID).First(&social).Error
+	err = s.db.Where("provider_name = ? AND provider_id = ?", models.ProviderGoogle, userInfo.ID).First(&social).Error
 	if err == nil {
 		var user models.User
 		if err := s.db.First(&user, social.UserID).Error; err != nil {
@@ -216,10 +227,10 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 	}
 
 	var user models.User
-	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := s.db.Where("email = ?", userInfo.Email).First(&user).Error; err != nil {
 		user = models.User{
-			Email:    email,
-			Name:     name,
+			Email:    userInfo.Email,
+			Name:     userInfo.Name,
 			Role:     models.RolePencari,
 			IsActive: true,
 		}
@@ -231,7 +242,7 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 	social = models.SocialAccount{
 		UserID:       user.ID,
 		ProviderName: models.ProviderGoogle,
-		ProviderID:   providerID,
+		ProviderID:   userInfo.ID,
 	}
 	if err := s.db.Create(&social).Error; err != nil {
 		return nil, fmt.Errorf("failed to link google account: %w", err)
@@ -240,14 +251,14 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 	return s.generateAuthResponse(&user)
 }
 
-func fetchGoogleUserInfo(accessToken string) (map[string]interface{}, error) {
+func fetchGoogleUserInfo(accessToken string) (*googleUserInfo, error) {
 	req, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -258,14 +269,9 @@ func fetchGoogleUserInfo(accessToken string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("google userinfo returned status %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+	var userInfo googleUserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
 		return nil, err
 	}
-
-	var userInfo map[string]interface{}
-	if err := json.Unmarshal(body, &userInfo); err != nil {
-		return nil, err
-	}
-	return userInfo, nil
+	return &userInfo, nil
 }

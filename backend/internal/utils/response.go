@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type Response struct {
@@ -49,7 +49,7 @@ func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	}
 
 	if err != nil {
-		log.Printf("[ERROR] %v", err)
+		log.Error().Err(err).Msg("request error")
 	}
 
 	c.JSON(statusCode, response)

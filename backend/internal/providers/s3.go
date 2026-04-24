@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"fmt"
 	"mime/multipart"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -20,7 +21,7 @@ type S3Provider struct {
 	endpoint string
 }
 
-func NewS3Provider(cfg *appconfig.Config) *S3Provider {
+func NewS3Provider(cfg *appconfig.Config) (*S3Provider, error) {
 	awsCfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(cfg.AWS.Region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
@@ -30,7 +31,7 @@ func NewS3Provider(cfg *appconfig.Config) *S3Provider {
 		)),
 	)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
 	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
@@ -45,7 +46,7 @@ func NewS3Provider(cfg *appconfig.Config) *S3Provider {
 		tm:       transfermanager.New(s3Client),
 		bucket:   cfg.AWS.S3BucketName,
 		endpoint: cfg.AWS.S3Endpoint,
-	}
+	}, nil
 }
 
 func (p *S3Provider) UploadFile(file *multipart.FileHeader, path string) (string, error) {

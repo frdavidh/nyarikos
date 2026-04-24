@@ -7,14 +7,6 @@ type ImageResponse struct {
 	ImageURL string `json:"image_url" example:"https://example.com/image.jpg"`
 	IsMain   bool   `json:"is_main" example:"true"`
 }
-type KostRequest struct {
-	Name        string `json:"name" binding:"required,max=255" example:"Kost Bahagia"`
-	Description string `json:"description" binding:"omitempty" example:"A comfortable kost near the university"`
-	Address     string `json:"address" binding:"required" example:"Jl. Merdeka No. 1"`
-	City        string `json:"city" binding:"required" example:"Jakarta"`
-	IsPremium   *bool  `json:"is_premium" binding:"omitempty" example:"true"`
-	KostType    string `json:"kost_type" binding:"required" example:"putra"`
-}
 
 type KostResponse struct {
 	ID          uint            `json:"id" example:"1"`

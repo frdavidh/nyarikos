@@ -6,6 +6,16 @@
       "sourceType": "github",
       "computedHash": "8df9b47092524833138b58682d03f2e153a242e550d1693657afdbee0cc9cdb0"
     },
+    "caveman-commit": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "computedHash": "76994afc39b68f4dbe098df76262b68d9928a23ee0f6aaebb11ba0e0f55bfa13"
+    },
+    "create-branch": {
+      "source": "ruchernchong/claude-kit",
+      "sourceType": "github",
+      "computedHash": "72453f82801d34815e1cded81e25cb3231a1b7d80da4f301e47d53c2263cfc4c"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",

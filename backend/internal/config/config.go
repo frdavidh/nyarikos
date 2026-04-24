@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -71,9 +72,18 @@ type MidtransConfig struct {
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
-	jwtExpiresIn, _ := time.ParseDuration(getEnv("JWT_EXPIRES_IN", "24h"))
-	refreshExpiresIn, _ := time.ParseDuration(getEnv("JWT_REFRESH_EXPIRES_IN", "72h"))
-	maxUploadSize, _ := strconv.ParseInt(getEnv("MAX_UPLOAD_SIZE", "10485760"), 10, 64)
+	jwtExpiresIn, err := time.ParseDuration(getEnv("JWT_EXPIRES_IN", "24h"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT_EXPIRES_IN: %w", err)
+	}
+	refreshExpiresIn, err := time.ParseDuration(getEnv("JWT_REFRESH_EXPIRES_IN", "72h"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT_REFRESH_EXPIRES_IN: %w", err)
+	}
+	maxUploadSize, err := strconv.ParseInt(getEnv("MAX_UPLOAD_SIZE", "10485760"), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid MAX_UPLOAD_SIZE: %w", err)
+	}
 
 	return &Config{
 		Server: ServerConfig{

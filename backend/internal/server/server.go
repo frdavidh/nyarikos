@@ -8,7 +8,6 @@ import (
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"gorm.io/gorm"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -16,7 +15,6 @@ import (
 
 type Server struct {
 	config         *config.Config
-	db             *gorm.DB
 	logger         *zerolog.Logger
 	authService    services.AuthService
 	userService    services.UserService

@@ -243,5 +243,5 @@ func TestPaymentHandler_Webhook_GenericError(t *testing.T) {
 
 	w := makeRequest(t, router, "POST", "/api/v1/payments/webhook", reqBody, nil)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

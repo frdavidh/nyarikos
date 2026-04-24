@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
@@ -93,8 +92,7 @@ func (h *PaymentHandler) Webhook(c *gin.Context) {
 		case errors.Is(err, services.ErrPaymentNotFound):
 			utils.NotFoundResponse(c, "payment not found", nil)
 		default:
-			c.JSON(http.StatusOK, gin.H{"status": "ok"})
-			return
+			utils.InternalServerErrorResponse(c, "failed to process webhook", err)
 		}
 		return
 	}
