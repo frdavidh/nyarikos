@@ -42,17 +42,6 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	mainDB, err := db.DB()
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to get database connection")
-	}
-
-	defer func() {
-		if err := mainDB.Close(); err != nil {
-			log.Error().Err(err).Msg("failed to close database connection")
-		}
-	}()
-
 	authService := services.NewAuthService(db, cfg)
 	userService := services.NewUserService(db)
 	kostService := services.NewKostService(db)
@@ -65,10 +54,24 @@ func main() {
 	case "local":
 		uploadProvider = providers.NewLocalUploadProvider(cfg.Upload.Path)
 	case "s3":
-		uploadProvider = providers.NewS3Provider(cfg)
+		uploadProvider, err = providers.NewS3Provider(cfg)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to initialize S3 provider")
+		}
 	default:
-		log.Fatal().Msg("invalid upload providerr")
+		log.Fatal().Msg("invalid upload provider")
 	}
+
+	mainDB, err := db.DB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to get database connection")
+	}
+
+	defer func() {
+		if err := mainDB.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close database connection")
+		}
+	}()
 
 	uploadService := services.NewUploadService(uploadProvider)
 

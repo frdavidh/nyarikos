@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -26,13 +27,22 @@ func (s *UploadService) DeleteFile(path string) error {
 	return s.uploadProvider.DeleteFile(path)
 }
 
+var unsafeFilenameChars = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+
+func sanitizeFilename(name string) string {
+	name = filepath.Base(name)
+	name = unsafeFilenameChars.ReplaceAllString(name, "_")
+	return name
+}
+
 func (s *UploadService) UploadKostImage(kostID uint, file *multipart.FileHeader) (string, error) {
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if !isValidImageExt(ext) {
 		return "", fmt.Errorf("%w: %s", ErrInvalidFileType, ext)
 	}
 
-	path := fmt.Sprintf("kost/%d/%s", kostID, file.Filename)
+	safeName := sanitizeFilename(file.Filename)
+	path := fmt.Sprintf("kost/%d/%s", kostID, safeName)
 
 	return s.uploadProvider.UploadFile(file, path)
 }

@@ -9,7 +9,7 @@ import (
 
 type Room struct {
 	ID            uint            `json:"id" gorm:"primaryKey"`
-	KostID        uint            `json:"owner_id" gorm:"index;not null"`
+	KostID        uint            `json:"kost_id" gorm:"index;not null"`
 	RoomType      string          `json:"room_type" gorm:"not null"`
 	PricePerMonth decimal.Decimal `json:"price_per_month" gorm:"index;type:decimal(12,2);not null"`
 	TotalRooms    int             `json:"total_rooms" gorm:"not null;default:1"`

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -24,6 +26,12 @@ type bookingService struct {
 
 func NewBookingService(db *gorm.DB) BookingService {
 	return &bookingService{db: db}
+}
+
+func generateBookingCode() string {
+	b := make([]byte, 4)
+	_, _ = rand.Read(b)
+	return "BK-" + hex.EncodeToString(b)
 }
 
 func (s *bookingService) CreateBooking(userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error) {
@@ -50,15 +58,18 @@ func (s *bookingService) CreateBooking(userID uint, req *dto.CreateBookingReques
 		}
 
 		var activeBookings int64
-		tx.Model(&models.Booking{}).
+		if err := tx.Model(&models.Booking{}).
 			Where("room_id = ? AND status IN ?", req.RoomID, []models.BookingStatus{models.BookingPending, models.BookingPaid}).
-			Count(&activeBookings)
+			Count(&activeBookings).Error; err != nil {
+			return fmt.Errorf("failed to count active bookings: %w", err)
+		}
 
 		if activeBookings >= int64(room.TotalRooms) {
 			return ErrNoRoomsAvailable
 		}
 
 		booking = models.Booking{
+			BookingCode:     generateBookingCode(),
 			UserID:          userID,
 			RoomID:          req.RoomID,
 			StartDate:       req.StartDate,

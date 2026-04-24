@@ -130,13 +130,10 @@ func (s *roomService) GetRoomByKostID(kostID uint) ([]dto.RoomResponse, error) {
 	}
 	responses := make([]dto.RoomResponse, len(rooms))
 	for i, r := range rooms {
-		r := r
 		responses[i] = *toRoomResponse(&r)
 	}
 	return responses, nil
 }
-
-// ############################################################################################################
 
 func (s *roomService) GetAllFacilities() ([]dto.FacilityResponse, error) {
 	var facilities []models.Facility
@@ -196,8 +193,6 @@ func (s *roomService) DeleteFacility(facilityID uint) error {
 	return nil
 }
 
-// ############################################################################################################
-
 func (s *roomService) CreateRoomFacility(roomID uint, req *dto.CreateRoomFacilityRequest) (*dto.RoomFacilityResponse, error) {
 	var room models.Room
 	if err := s.db.First(&room, roomID).Error; err != nil {
@@ -238,7 +233,6 @@ func (s *roomService) DeleteRoomFacility(roomID uint, facilityID uint) error {
 	return nil
 }
 
-// ############################################################################################################
 func toRoomResponse(room *models.Room) *dto.RoomResponse {
 	resp := &dto.RoomResponse{
 		ID:            room.ID,
@@ -250,7 +244,6 @@ func toRoomResponse(room *models.Room) *dto.RoomResponse {
 		UpdatedAt:     room.UpdatedAt,
 	}
 	for _, f := range room.Facilities {
-		f := f
 		resp.Facilities = append(resp.Facilities, toFacilityResponse(&f))
 	}
 	return resp

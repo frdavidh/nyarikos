@@ -51,7 +51,7 @@ func GenerateTokenPair(cfg *config.JWTConfig, userID uint, email, role string) (
 	return accessTokenString, refreshTokenString, nil
 }
 
-func ValidateToken(tokenString string, secret []byte) (*Claims, error) {
+func ValidateToken(tokenString string, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})

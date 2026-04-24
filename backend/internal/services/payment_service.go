@@ -149,11 +149,16 @@ func (s *paymentService) HandleWebhook(req *dto.MidtransWebhookRequest) error {
 
 	status := mapMidtransStatus(statusResp.TransactionStatus, statusResp.FraudStatus)
 
+	rawReq, marshalErr := json.Marshal(req)
+	if marshalErr != nil {
+		return fmt.Errorf("failed to marshal webhook request: %w", marshalErr)
+	}
+
 	updates := map[string]interface{}{
 		"status":            status,
 		"transaction_id":    statusResp.TransactionID,
 		"payment_type":      statusResp.PaymentType,
-		"midtrans_response": json.RawMessage(mustMarshal(req)),
+		"midtrans_response": json.RawMessage(rawReq),
 	}
 
 	if len(statusResp.VaNumbers) > 0 {
@@ -205,11 +210,6 @@ func mapMidtransStatus(transactionStatus, fraudStatus string) models.PaymentStat
 	default:
 		return models.PaymentPending
 	}
-}
-
-func mustMarshal(v interface{}) []byte {
-	b, _ := json.Marshal(v)
-	return b
 }
 
 func toPaymentResponse(p *models.Payment) *dto.PaymentResponse {

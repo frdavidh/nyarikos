@@ -43,9 +43,19 @@ func (p *LocalUploadProvider) UploadFile(file *multipart.FileHeader, path string
 }
 
 func (p *LocalUploadProvider) DeleteFile(path string) error {
-	fullPath := filepath.Join(p.basePath, filepath.Clean("/"+path))
-	if !strings.HasPrefix(fullPath, filepath.Clean(p.basePath)) {
+	// Ensure path does not escape the base directory.
+	relPath := filepath.Join(".", filepath.Clean("/"+path))
+	fullPath := filepath.Join(p.basePath, relPath)
+	resolvedPath, err := filepath.EvalSymlinks(fullPath)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+	basePathResolved, err := filepath.EvalSymlinks(p.basePath)
+	if err != nil {
+		return fmt.Errorf("invalid base path: %w", err)
+	}
+	if !strings.HasPrefix(resolvedPath, basePathResolved+string(filepath.Separator)) && resolvedPath != basePathResolved {
 		return fmt.Errorf("invalid path")
 	}
-	return os.Remove(fullPath)
+	return os.Remove(resolvedPath)
 }

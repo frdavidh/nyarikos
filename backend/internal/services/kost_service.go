@@ -134,7 +134,6 @@ func (s *kostService) DeleteKost(kostID, userID uint) (*dto.KostResponse, error)
 	}
 
 	if kost.OwnerID != userID {
-		fmt.Println(kost.OwnerID, kost.Owner.ID, userID)
 		return nil, ErrUnauthorized
 	}
 
@@ -158,7 +157,9 @@ func (s *kostService) AddKostImage(kostID, userID uint, url, altText string) err
 	}
 
 	var count int64
-	s.db.Model(&models.KostImage{}).Where("kost_id = ?", kostID).Count(&count)
+	if err := s.db.Model(&models.KostImage{}).Where("kost_id = ?", kostID).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to count images: %w", err)
+	}
 
 	image := models.KostImage{
 		KostID:   kostID,
