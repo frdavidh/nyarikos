@@ -427,3 +427,165 @@ func TestRoomHandler_DeleteRoomFacility_NotFound(t *testing.T) {
 	assert.Equal(t, "room not found", resp["message"])
 	mockRoom.AssertExpectations(t)
 }
+
+func TestRoomHandler_CreateRoom_InvalidKostID(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	reqBody := dto.CreateRoomRequest{RoomType: "Standard"}
+
+	w := makeRequest(t, router, "POST", "/api/v1/kost/invalid/room/", reqBody, nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestRoomHandler_GetRoomByKostID_InvalidKostID(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	w := makeRequest(t, router, "GET", "/api/v1/kost/invalid/room/", nil, nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestRoomHandler_GetRoomByKostID_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockRoom.On("GetRoomByKostID", uint(1)).Return(nil, assert.AnError)
+
+	w := makeRequest(t, router, "GET", "/api/v1/kost/1/room/", nil, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestRoomHandler_GetAllFacilities_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockRoom.On("GetAllFacilities").Return(nil, assert.AnError)
+
+	w := makeRequest(t, router, "GET", "/api/v1/facilities/", nil, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestRoomHandler_CreateFacility_InvalidBody(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	w := makeRequest(t, router, "POST", "/api/v1/facilities/", "not-json", nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestRoomHandler_CreateFacility_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	reqBody := dto.CreateFacilityRequest{Name: "AC"}
+	mockRoom.On("CreateFacility", &reqBody).Return(nil, assert.AnError)
+
+	w := makeRequest(t, router, "POST", "/api/v1/facilities/", reqBody, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestRoomHandler_DeleteRoomFacility_InvalidBody(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	w := makeRequest(t, router, "DELETE", "/api/v1/room-facilities/", "not-json", nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestRoomHandler_DeleteRoomFacility_FacilityNotFound(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	reqBody := dto.DeleteRoomFacilityRequest{RoomID: 1, FacilityID: 999}
+	mockRoom.On("DeleteRoomFacility", uint(1), uint(999)).Return(services.ErrFacilityNotFound)
+
+	w := makeRequest(t, router, "DELETE", "/api/v1/room-facilities/", reqBody, nil)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	resp := parseResponse(t, w)
+	assert.Equal(t, "facility not found", resp["message"])
+}
+
+func TestRoomHandler_DeleteRoomFacility_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	reqBody := dto.DeleteRoomFacilityRequest{RoomID: 1, FacilityID: 2}
+	mockRoom.On("DeleteRoomFacility", uint(1), uint(2)).Return(assert.AnError)
+
+	w := makeRequest(t, router, "DELETE", "/api/v1/room-facilities/", reqBody, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestRoomHandler_UpdateRoom_InvalidBody(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	w := makeRequest(t, router, "PUT", "/api/v1/kost/1/room/1", "not-json", nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestRoomHandler_DeleteRoom_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockRoom := new(mockRoomService)
+	handler := NewRoomHandler(mockRoom)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockRoom.On("DeleteRoom", uint(1)).Return(assert.AnError)
+
+	w := makeRequest(t, router, "DELETE", "/api/v1/kost/1/room/1", nil, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}

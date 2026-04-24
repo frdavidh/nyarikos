@@ -37,16 +37,37 @@ type AuthService interface {
 	GoogleCallback(code string) (*dto.AuthResponse, error)
 }
 
+type httpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+type oauthExchanger interface {
+	Exchange(ctx context.Context, code string) (*oauth2.Token, error)
+}
+
+type oauth2Wrapper struct {
+	config *oauth2.Config
+}
+
+func (w *oauth2Wrapper) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+	return w.config.Exchange(ctx, code)
+}
+
 type authService struct {
-	db     *gorm.DB
-	config *config.Config
+	db            *gorm.DB
+	config        *config.Config
+	httpClient    httpClient
+	oauthExchange oauthExchanger
 }
 
 func NewAuthService(db *gorm.DB, config *config.Config) AuthService {
-	return &authService{
-		db:     db,
-		config: config,
+	svc := &authService{
+		db:         db,
+		config:     config,
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
+	svc.oauthExchange = &oauth2Wrapper{config: svc.oauthConfig()}
+	return svc
 }
 
 func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse, error) {
@@ -202,12 +223,12 @@ type googleUserInfo struct {
 }
 
 func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
-	token, err := s.oauthConfig().Exchange(context.Background(), code)
+	token, err := s.oauthExchange.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange oauth code: %w", err)
 	}
 
-	userInfo, err := fetchGoogleUserInfo(token.AccessToken)
+	userInfo, err := s.fetchGoogleUserInfo(token.AccessToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch google user info: %w", err)
 	}
@@ -251,15 +272,14 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 	return s.generateAuthResponse(&user)
 }
 
-func fetchGoogleUserInfo(accessToken string) (*googleUserInfo, error) {
+func (s *authService) fetchGoogleUserInfo(accessToken string) (*googleUserInfo, error) {
 	req, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

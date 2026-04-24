@@ -261,6 +261,239 @@ func TestKostHandler_AddKostImage_InvalidFileType(t *testing.T) {
 	assert.Equal(t, "invalid file type", resp["message"])
 }
 
+func TestKostHandler_CreateKost_Unauthorized(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	reqBody := dto.CreateKostRequest{Name: "Kost", Address: "Jl", City: "Jakarta", KostType: "putra"}
+	mockKost.On("CreateKost", uint(1), &reqBody).Return(nil, services.ErrUnauthorized)
+
+	w := makeRequest(t, router, "POST", "/api/v1/kost/", reqBody, nil)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestKostHandler_CreateKost_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	reqBody := dto.CreateKostRequest{Name: "Kost", Address: "Jl", City: "Jakarta", KostType: "putra"}
+	mockKost.On("CreateKost", uint(1), &reqBody).Return(nil, assert.AnError)
+
+	w := makeRequest(t, router, "POST", "/api/v1/kost/", reqBody, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestKostHandler_UpdateKost_NotFound(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	newName := "Kost Baru"
+	reqBody := dto.UpdateKostRequest{Name: &newName}
+	mockKost.On("UpdateKost", uint(1), uint(1), &reqBody).Return(nil, services.ErrKostNotFound)
+
+	w := makeRequest(t, router, "PUT", "/api/v1/kost/1", reqBody, nil)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestKostHandler_UpdateKost_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	newName := "Kost Baru"
+	reqBody := dto.UpdateKostRequest{Name: &newName}
+	mockKost.On("UpdateKost", uint(1), uint(1), &reqBody).Return(nil, assert.AnError)
+
+	w := makeRequest(t, router, "PUT", "/api/v1/kost/1", reqBody, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestKostHandler_DeleteKost_Unauthorized(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockKost.On("DeleteKost", uint(1), uint(1)).Return(nil, services.ErrUnauthorized)
+
+	w := makeRequest(t, router, "DELETE", "/api/v1/kost/1", nil, nil)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestKostHandler_DeleteKost_GenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockKost.On("DeleteKost", uint(1), uint(1)).Return(nil, assert.AnError)
+
+	w := makeRequest(t, router, "DELETE", "/api/v1/kost/1", nil, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestKostHandler_AddKostImage_NoFile(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	var b bytes.Buffer
+	writer := multipart.NewWriter(&b)
+	writer.WriteField("alt_text", "Test")
+	writer.Close()
+
+	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	resp := parseResponse(t, w)
+	assert.Equal(t, "no file uploaded", resp["message"])
+}
+
+func TestKostHandler_AddKostImage_NoAltText(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	var b bytes.Buffer
+	writer := multipart.NewWriter(&b)
+	part, _ := writer.CreateFormFile("image", "test.jpg")
+	part.Write([]byte("fake"))
+	writer.Close()
+
+	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	resp := parseResponse(t, w)
+	assert.Equal(t, "alt text is required", resp["message"])
+}
+
+func TestKostHandler_AddKostImage_UploadGenericError(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockUpload.On("UploadFile", mock.Anything, mock.Anything).Return("", assert.AnError)
+
+	var b bytes.Buffer
+	writer := multipart.NewWriter(&b)
+	part, _ := writer.CreateFormFile("image", "test.jpg")
+	part.Write([]byte("fake"))
+	writer.WriteField("alt_text", "Test")
+	writer.Close()
+
+	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	resp := parseResponse(t, w)
+	assert.Equal(t, "failed to upload image", resp["message"])
+}
+
+func TestKostHandler_AddKostImage_KostNotFoundAfterUpload(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockUpload.On("UploadFile", mock.Anything, mock.Anything).Return("https://cdn.example.com/img.jpg", nil)
+	mockKost.On("AddKostImage", uint(1), uint(1), "https://cdn.example.com/img.jpg", "Test").Return(services.ErrKostNotFound)
+
+	var b bytes.Buffer
+	writer := multipart.NewWriter(&b)
+	part, _ := writer.CreateFormFile("image", "test.jpg")
+	part.Write([]byte("fake"))
+	writer.WriteField("alt_text", "Test")
+	writer.Close()
+
+	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	resp := parseResponse(t, w)
+	assert.Equal(t, "kost not found", resp["message"])
+}
+
+func TestKostHandler_AddKostImage_UnauthorizedAfterUpload(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+
+	mockUpload.On("UploadFile", mock.Anything, mock.Anything).Return("https://cdn.example.com/img.jpg", nil)
+	mockKost.On("AddKostImage", uint(1), uint(1), "https://cdn.example.com/img.jpg", "Test").Return(services.ErrUnauthorized)
+
+	var b bytes.Buffer
+	writer := multipart.NewWriter(&b)
+	part, _ := writer.CreateFormFile("image", "test.jpg")
+	part.Write([]byte("fake"))
+	writer.WriteField("alt_text", "Test")
+	writer.Close()
+
+	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	resp := parseResponse(t, w)
+	assert.Equal(t, "you are not allowed to add image to this kost", resp["message"])
+}
+
 type mockUploadProvider struct {
 	mock.Mock
 }

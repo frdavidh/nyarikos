@@ -15,6 +15,7 @@ These rules ensure maintainability, safety, and developer velocity.
 - **BP-1 (MUST)** Ask the user clarifying questions when requirements are ambiguous or ≥ 2 fundamentally different approaches exist.
 - **BP-2 (SHOULD)** Draft and confirm an approach for complex work.
 - **BP-3 (SHOULD)** If ≥ 2 approaches exist, list clear pros and cons.
+- **BP-4 (SHOULD)** Use Skill that related to task
 
 ---
 
