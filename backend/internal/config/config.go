@@ -17,6 +17,7 @@ type Config struct {
 	AWS      AWSConfig
 	Upload   UploadConfig
 	OAuth2   OAuth2Config
+	Midtrans MidtransConfig
 }
 type ServerConfig struct {
 	Port    string
@@ -58,6 +59,13 @@ type OAuth2Config struct {
 	RedirectURL  string
 	Scope        []string
 	Endpoint     oauth2.Endpoint
+}
+
+type MidtransConfig struct {
+	ServerKey    string
+	ClientKey    string
+	MerchantID   string
+	IsProduction bool
 }
 
 func Load() (*Config, error) {
@@ -103,6 +111,12 @@ func Load() (*Config, error) {
 			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
 			Scope:        []string{"openid", "email", "profile"},
 			Endpoint:     google.Endpoint,
+		},
+		Midtrans: MidtransConfig{
+			ServerKey:    getEnv("MIDTRANS_SERVER_KEY", ""),
+			ClientKey:    getEnv("MIDTRANS_CLIENT_KEY", ""),
+			MerchantID:   getEnv("MIDTRANS_MERCHANT_ID", ""),
+			IsProduction: getEnv("MIDTRANS_ENV", "sandbox") == "production",
 		},
 	}, nil
 }

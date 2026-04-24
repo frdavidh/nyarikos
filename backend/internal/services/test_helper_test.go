@@ -50,5 +50,10 @@ func testConfig() *config.Config {
 			RedirectURL:  "http://localhost:8080/auth/google/callback",
 			Scope:        []string{"openid", "email", "profile"},
 		},
+		Midtrans: config.MidtransConfig{
+			ServerKey:  "SB-Mid-server-test-key",
+			ClientKey:  "SB-Mid-client-test-key",
+			MerchantID: "G000000000",
+		},
 	}
 }
