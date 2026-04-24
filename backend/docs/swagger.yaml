@@ -98,6 +98,14 @@ definitions:
     - kost_type
     - name
     type: object
+  dto.CreatePaymentRequest:
+    properties:
+      booking_id:
+        example: 1
+        type: integer
+    required:
+    - booking_id
+    type: object
   dto.CreateRoomFacilityRequest:
     properties:
       facility_id:
@@ -214,6 +222,71 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.MidtransWebhookRequest:
+    properties:
+      currency:
+        type: string
+      expiry_time:
+        type: string
+      fraud_status:
+        type: string
+      gross_amount:
+        type: string
+      merchant_id:
+        type: string
+      order_id:
+        type: string
+      payment_type:
+        type: string
+      settlement_time:
+        type: string
+      signature_key:
+        type: string
+      status_code:
+        type: string
+      status_message:
+        type: string
+      transaction_id:
+        type: string
+      transaction_status:
+        type: string
+      transaction_time:
+        type: string
+    type: object
+  dto.PaymentResponse:
+    properties:
+      amount:
+        example: 1500000
+        type: number
+      booking_id:
+        example: 1
+        type: integer
+      checkout_url:
+        type: string
+      created_at:
+        type: string
+      external_id:
+        example: INV-20240101-001
+        type: string
+      id:
+        example: 1
+        type: integer
+      invoice_number:
+        type: string
+      paid_at:
+        type: string
+      payment_type:
+        type: string
+      snap_token:
+        type: string
+      status:
+        example: pending
+        type: string
+      transaction_id:
+        type: string
+      va_number:
+        type: string
     type: object
   dto.RefreshTokenRequest:
     properties:
@@ -1282,6 +1355,89 @@ paths:
       summary: Update room
       tags:
       - Room
+  /payments/:
+    post:
+      consumes:
+      - application/json
+      description: Create a Midtrans Snap payment for a booking
+      parameters:
+      - description: Create Payment Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Payment created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/utils.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PaymentResponse'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Booking not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "409":
+          description: Payment already exists or booking already paid
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new payment
+      tags:
+      - Payment
+  /payments/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Handle Midtrans payment notification webhook
+      parameters:
+      - description: Midtrans Webhook Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MidtransWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Webhook processed successfully
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "404":
+          description: Payment not found
+          schema:
+            $ref: '#/definitions/utils.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.Response'
+      summary: Midtrans webhook
+      tags:
+      - Payment
   /room-facilities/:
     delete:
       consumes:

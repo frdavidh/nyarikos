@@ -1436,6 +1436,139 @@ const docTemplate = `{
                 }
             }
         },
+        "/payments/": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a Midtrans Snap payment for a booking",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Create a new payment",
+                "parameters": [
+                    {
+                        "description": "Create Payment Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreatePaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/utils.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PaymentResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Payment already exists or booking already paid",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/webhook": {
+            "post": {
+                "description": "Handle Midtrans payment notification webhook",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Midtrans webhook",
+                "parameters": [
+                    {
+                        "description": "Midtrans Webhook Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MidtransWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook processed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/room-facilities/": {
             "post": {
                 "security": [
@@ -1828,6 +1961,18 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreatePaymentRequest": {
+            "type": "object",
+            "required": [
+                "booking_id"
+            ],
+            "properties": {
+                "booking_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "dto.CreateRoomFacilityRequest": {
             "type": "object",
             "required": [
@@ -1989,6 +2134,102 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "password123"
+                }
+            }
+        },
+        "dto.MidtransWebhookRequest": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "expiry_time": {
+                    "type": "string"
+                },
+                "fraud_status": {
+                    "type": "string"
+                },
+                "gross_amount": {
+                    "type": "string"
+                },
+                "merchant_id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "payment_type": {
+                    "type": "string"
+                },
+                "settlement_time": {
+                    "type": "string"
+                },
+                "signature_key": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "string"
+                },
+                "status_message": {
+                    "type": "string"
+                },
+                "transaction_id": {
+                    "type": "string"
+                },
+                "transaction_status": {
+                    "type": "string"
+                },
+                "transaction_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PaymentResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number",
+                    "example": 1500000
+                },
+                "booking_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "checkout_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string",
+                    "example": "INV-20240101-001"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "invoice_number": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "payment_type": {
+                    "type": "string"
+                },
+                "snap_token": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "transaction_id": {
+                    "type": "string"
+                },
+                "va_number": {
+                    "type": "string"
                 }
             }
         },
