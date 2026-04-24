@@ -1,0 +1,1 @@
+DROP TYPE payment_method_type;
