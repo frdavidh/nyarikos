@@ -67,7 +67,6 @@ func parseResponse(t *testing.T, w *httptest.ResponseRecorder) map[string]interf
 	return resp
 }
 
-// Mock AuthService
 type mockAuthService struct {
 	mock.Mock
 }
@@ -116,7 +115,6 @@ func (m *mockAuthService) GoogleCallback(code string) (*dto.AuthResponse, error)
 
 var _ services.AuthService = (*mockAuthService)(nil)
 
-// Mock UserService
 type mockUserService struct {
 	mock.Mock
 }
@@ -139,7 +137,6 @@ func (m *mockUserService) UpdateProfile(userID uint, req *dto.UpdateProfileReque
 
 var _ services.UserService = (*mockUserService)(nil)
 
-// Mock KostService
 type mockKostService struct {
 	mock.Mock
 }
@@ -191,7 +188,6 @@ func (m *mockKostService) AddKostImage(kostID, userID uint, url, altText string)
 
 var _ services.KostService = (*mockKostService)(nil)
 
-// Mock RoomService
 type mockRoomService struct {
 	mock.Mock
 }
@@ -277,7 +273,6 @@ func (m *mockRoomService) DeleteRoomFacility(roomID uint, facilityID uint) error
 
 var _ services.RoomService = (*mockRoomService)(nil)
 
-// Mock BookingService
 type mockBookingService struct {
 	mock.Mock
 }
@@ -291,6 +286,25 @@ func (m *mockBookingService) CreateBooking(userID uint, req *dto.CreateBookingRe
 }
 
 var _ services.BookingService = (*mockBookingService)(nil)
+
+type mockPaymentService struct {
+	mock.Mock
+}
+
+func (m *mockPaymentService) CreatePayment(userID uint, req *dto.CreatePaymentRequest) (*dto.PaymentResponse, error) {
+	args := m.Called(userID, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.PaymentResponse), args.Error(1)
+}
+
+func (m *mockPaymentService) HandleWebhook(req *dto.MidtransWebhookRequest) error {
+	args := m.Called(req)
+	return args.Error(0)
+}
+
+var _ services.PaymentService = (*mockPaymentService)(nil)
 
 func setAuthContext(c *gin.Context, userID uint, role string) {
 	c.Set("user_id", userID)

@@ -23,6 +23,7 @@ type Server struct {
 	kostService    services.KostService
 	roomService    services.RoomService
 	bookingService services.BookingService
+	paymentService services.PaymentService
 	uploadService  *services.UploadService
 }
 
@@ -33,6 +34,7 @@ func New(cfg *config.Config,
 	kostService services.KostService,
 	roomService services.RoomService,
 	bookingService services.BookingService,
+	paymentService services.PaymentService,
 	uploadService *services.UploadService,
 ) *Server {
 	return &Server{
@@ -43,6 +45,7 @@ func New(cfg *config.Config,
 		kostService:    kostService,
 		roomService:    roomService,
 		bookingService: bookingService,
+		paymentService: paymentService,
 		uploadService:  uploadService,
 	}
 }
@@ -63,6 +66,7 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	kostHandler := NewKostHandler(s.kostService, s.uploadService)
 	roomHandler := NewRoomHandler(s.roomService)
 	bookingHandler := NewBookingHandler(s.bookingService)
+	paymentHandler := NewPaymentHandler(s.paymentService)
 
 	api := router.Group("api/v1")
 	authHandler.Routes(api)
@@ -70,6 +74,7 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
 	roomHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
 	bookingHandler.Routes(api, s.authMiddleware())
+	paymentHandler.Routes(api, s.authMiddleware())
 
 	return router
 }
