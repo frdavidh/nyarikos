@@ -203,6 +203,26 @@ func TestAuthHandler_Logout_Success(t *testing.T) {
 	mockAuth.AssertExpectations(t)
 }
 
+func TestAuthHandler_Logout_ServiceError(t *testing.T) {
+	router := setupTestRouter()
+	mockAuth := new(mockAuthService)
+	handler := NewAuthHandler(mockAuth)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api)
+
+	reqBody := dto.RefreshTokenRequest{RefreshToken: "refresh-token"}
+
+	mockAuth.On("Logout", "refresh-token").Return(assert.AnError)
+
+	w := makeRequest(t, router, "POST", "/api/v1/auth/logout", reqBody, nil)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	resp := parseResponse(t, w)
+	assert.False(t, resp["success"].(bool))
+	mockAuth.AssertExpectations(t)
+}
+
 func TestAuthHandler_GoogleLogin(t *testing.T) {
 	router := setupTestRouter()
 	mockAuth := new(mockAuthService)

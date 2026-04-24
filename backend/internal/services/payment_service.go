@@ -30,11 +30,19 @@ type PaymentService interface {
 	HandleWebhook(req *dto.MidtransWebhookRequest) error
 }
 
+type midtransSnapClient interface {
+	CreateTransaction(req *snap.Request) (*snap.Response, *midtrans.Error)
+}
+
+type midtransCoreClient interface {
+	CheckTransaction(orderID string) (*coreapi.TransactionStatusResponse, *midtrans.Error)
+}
+
 type paymentService struct {
 	db     *gorm.DB
 	config *config.MidtransConfig
-	snap   snap.Client
-	core   coreapi.Client
+	snap   midtransSnapClient
+	core   midtransCoreClient
 }
 
 func NewPaymentService(db *gorm.DB, cfg *config.MidtransConfig) PaymentService {
