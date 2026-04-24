@@ -50,3 +50,5 @@ uploads/
 # Logs
 *.log
 
+#other
+.kilo
