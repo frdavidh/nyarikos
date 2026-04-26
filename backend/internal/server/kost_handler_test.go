@@ -72,7 +72,7 @@ func TestKostHandler_GetAllKost_Success(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
 
-	mockKost.On("GetAllKost", 1, 10).Return([]dto.KostResponse{
+	mockKost.On("GetAllKost", mock.Anything).Return([]dto.KostResponse{
 		{ID: 1, Name: "Kost A"},
 		{ID: 2, Name: "Kost B"},
 	}, int64(2), nil)
@@ -85,6 +85,45 @@ func TestKostHandler_GetAllKost_Success(t *testing.T) {
 	mockKost.AssertExpectations(t)
 }
 
+func TestKostHandler_GetAllKost_PublicAccess(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api)
+
+	mockKost.On("GetAllKost", mock.Anything).Return([]dto.KostResponse{
+		{ID: 1, Name: "Kost A"},
+	}, int64(1), nil)
+
+	w := makeRequest(t, router, "GET", "/api/v1/kost/", nil, nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestKostHandler_GetAllKost_WithFilters(t *testing.T) {
+	router := setupTestRouter()
+	mockKost := new(mockKostService)
+	mockUpload := new(mockUploadProvider)
+	uploadService := services.NewUploadService(mockUpload)
+	handler := NewKostHandler(mockKost, uploadService)
+
+	api := router.Group("/api/v1")
+	handler.Routes(api)
+
+	mockKost.On("GetAllKost", mock.Anything).Return([]dto.KostResponse{
+		{ID: 1, Name: "Kost Merdeka"},
+	}, int64(1), nil)
+
+	w := makeRequest(t, router, "GET", "/api/v1/kost/?q=Merdeka&city=Jakarta&min_price=1000000&max_price=2000000&room_type=single&facility_ids=1&facility_ids=2&kost_type=putra", nil, nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	mockKost.AssertExpectations(t)
+}
+
 func TestKostHandler_GetKost_Success(t *testing.T) {
 	router := setupTestRouter()
 	mockKost := new(mockKostService)
@@ -93,7 +132,7 @@ func TestKostHandler_GetKost_Success(t *testing.T) {
 	handler := NewKostHandler(mockKost, uploadService)
 
 	api := router.Group("/api/v1")
-	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+	handler.Routes(api)
 
 	mockKost.On("GetKost", uint(1)).Return(&dto.KostResponse{
 		ID:   1,
@@ -116,7 +155,7 @@ func TestKostHandler_GetKost_NotFound(t *testing.T) {
 	handler := NewKostHandler(mockKost, uploadService)
 
 	api := router.Group("/api/v1")
-	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+	handler.Routes(api)
 
 	mockKost.On("GetKost", uint(999)).Return(nil, services.ErrKostNotFound)
 
@@ -136,7 +175,7 @@ func TestKostHandler_GetKost_InvalidID(t *testing.T) {
 	handler := NewKostHandler(mockKost, uploadService)
 
 	api := router.Group("/api/v1")
-	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
+	handler.Routes(api)
 
 	w := makeRequest(t, router, "GET", "/api/v1/kost/invalid", nil, nil)
 

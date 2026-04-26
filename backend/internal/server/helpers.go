@@ -17,6 +17,16 @@ func parseUintParam(c *gin.Context, param string) (uint, bool) {
 	return uint(id), true
 }
 
+func parseUintSlice(values []string) []uint {
+	result := make([]uint, 0, len(values))
+	for _, v := range values {
+		if id, err := strconv.Atoi(v); err == nil {
+			result = append(result, uint(id))
+		}
+	}
+	return result
+}
+
 func parsePagination(c *gin.Context) (page, limit int) {
 	page, _ = strconv.Atoi(c.DefaultQuery("page", "1"))
 	if page < 1 {

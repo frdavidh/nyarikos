@@ -19,7 +19,7 @@ type KostService interface {
 	CreateKost(ownerID uint, req *dto.CreateKostRequest) (*dto.KostResponse, error)
 	UpdateKost(kostID, userID uint, req *dto.UpdateKostRequest) (*dto.KostResponse, error)
 	DeleteKost(kostID, userID uint) (*dto.KostResponse, error)
-	GetAllKost(page, limit int) ([]dto.KostResponse, int64, error)
+	GetAllKost(req *dto.SearchKostRequest) ([]dto.KostResponse, int64, error)
 	GetKost(id uint) (*dto.KostResponse, error)
 	AddKostImage(kostID, userID uint, url, altText string) error
 }
@@ -54,16 +54,65 @@ func (s *kostService) CreateKost(ownerID uint, req *dto.CreateKostRequest) (*dto
 	return toKostResponse(&kost), nil
 }
 
-func (s *kostService) GetAllKost(page, limit int) ([]dto.KostResponse, int64, error) {
-	var kosts []models.Kost
-	var total int64
+func (s *kostService) GetAllKost(req *dto.SearchKostRequest) ([]dto.KostResponse, int64, error) {
+	buildQuery := func(db *gorm.DB) *gorm.DB {
+		q := db.Model(&models.Kost{})
 
-	if err := s.db.Model(&models.Kost{}).Count(&total).Error; err != nil {
+		if req.Q != "" {
+			like := "%" + req.Q + "%"
+			q = q.Where("LOWER(name) LIKE LOWER(?) OR LOWER(address) LIKE LOWER(?) OR LOWER(city) LIKE LOWER(?)", like, like, like)
+		}
+		if req.City != "" {
+			q = q.Where("LOWER(city) LIKE LOWER(?)", "%"+req.City+"%")
+		}
+		if req.KostType != "" {
+			q = q.Where("kost_type = ?", req.KostType)
+		}
+		if req.MinPrice > 0 || req.MaxPrice > 0 || req.RoomType != "" || len(req.FacilityIDs) > 0 {
+			roomQuery := s.db.Model(&models.Room{}).Select("DISTINCT kost_id")
+			if req.MinPrice > 0 {
+				roomQuery = roomQuery.Where("price_per_month >= ?", req.MinPrice)
+			}
+			if req.MaxPrice > 0 {
+				roomQuery = roomQuery.Where("price_per_month <= ?", req.MaxPrice)
+			}
+			if req.RoomType != "" {
+				roomQuery = roomQuery.Where("room_type = ?", req.RoomType)
+			}
+			if len(req.FacilityIDs) > 0 {
+				facilitySubQuery := s.db.Model(&models.RoomFacility{}).
+					Select("room_id").
+					Where("facility_id IN ?", req.FacilityIDs).
+					Group("room_id").
+					Having("COUNT(DISTINCT facility_id) = ?", len(req.FacilityIDs))
+				roomQuery = roomQuery.Where("id IN (?)", facilitySubQuery)
+			}
+			q = q.Where("id IN (?)", roomQuery)
+		}
+		return q
+	}
+
+	var total int64
+	if err := buildQuery(s.db).Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count kost: %w", err)
 	}
 
-	offset := (page - 1) * limit
-	if err := s.db.Preload("Images").Offset(offset).Limit(limit).Find(&kosts).Error; err != nil {
+	offset := (req.Page - 1) * req.Limit
+	if offset < 0 {
+		offset = 0
+	}
+	if req.Limit <= 0 {
+		req.Limit = 10
+	}
+
+	var kosts []models.Kost
+	if err := buildQuery(s.db).
+		Preload("Images").
+		Preload("Rooms").
+		Preload("Rooms.Facilities").
+		Offset(offset).
+		Limit(req.Limit).
+		Find(&kosts).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to get all kost: %w", err)
 	}
 
@@ -77,7 +126,7 @@ func (s *kostService) GetAllKost(page, limit int) ([]dto.KostResponse, int64, er
 
 func (s *kostService) GetKost(id uint) (*dto.KostResponse, error) {
 	var kost models.Kost
-	if err := s.db.Preload("Images").First(&kost, id).Error; err != nil {
+	if err := s.db.Preload("Images").Preload("Rooms").Preload("Rooms.Facilities").First(&kost, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrKostNotFound
 		}
@@ -179,6 +228,10 @@ func toKostResponse(kost *models.Kost) *dto.KostResponse {
 			ImageURL: img.ImageURL,
 		})
 	}
+	rooms := make([]dto.RoomResponse, 0, len(kost.Rooms))
+	for i := range kost.Rooms {
+		rooms = append(rooms, *toRoomResponse(&kost.Rooms[i]))
+	}
 	return &dto.KostResponse{
 		ID:          kost.ID,
 		OwnerID:     kost.OwnerID,
@@ -191,5 +244,6 @@ func toKostResponse(kost *models.Kost) *dto.KostResponse {
 		CreatedAt:   kost.CreatedAt,
 		UpdatedAt:   kost.UpdatedAt,
 		Images:      images,
+		Rooms:       rooms,
 	}
 }
