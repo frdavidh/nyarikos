@@ -165,8 +165,8 @@ func (m *mockKostService) DeleteKost(kostID, userID uint) (*dto.KostResponse, er
 	return args.Get(0).(*dto.KostResponse), args.Error(1)
 }
 
-func (m *mockKostService) GetAllKost(page, limit int) ([]dto.KostResponse, int64, error) {
-	args := m.Called(page, limit)
+func (m *mockKostService) GetAllKost(req *dto.SearchKostRequest) ([]dto.KostResponse, int64, error) {
+	args := m.Called(req)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}

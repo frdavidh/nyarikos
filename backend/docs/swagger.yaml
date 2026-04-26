@@ -207,6 +207,10 @@ definitions:
       owner_id:
         example: 1
         type: integer
+      rooms:
+        items:
+          $ref: '#/definitions/dto.RoomResponse'
+        type: array
       updated_at:
         example: "2024-01-01T00:00:00Z"
         type: string
@@ -872,7 +876,7 @@ paths:
       - Facility
   /kost/:
     get:
-      description: Get a paginated list of all kosts
+      description: Get a paginated list of all kosts with optional filters
       parameters:
       - default: 1
         description: Page number
@@ -884,6 +888,37 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Search query for name, address, or city
+        in: query
+        name: q
+        type: string
+      - description: Minimum room price per month
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum room price per month
+        in: query
+        name: max_price
+        type: number
+      - description: Room type filter
+        in: query
+        name: room_type
+        type: string
+      - collectionFormat: csv
+        description: Facility IDs filter (must have all)
+        in: query
+        items:
+          type: integer
+        name: facility_ids
+        type: array
+      - description: City filter
+        in: query
+        name: city
+        type: string
+      - description: Kost type filter (putra/putri/campur)
+        in: query
+        name: kost_type
+        type: string
       produces:
       - application/json
       responses:
@@ -898,16 +933,10 @@ paths:
                     $ref: '#/definitions/dto.KostResponse'
                   type: array
               type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.Response'
         "500":
           description: Internal server error
           schema:
             $ref: '#/definitions/utils.Response'
-      security:
-      - BearerAuth: []
       summary: Get all kosts
       tags:
       - Kost
@@ -1017,10 +1046,6 @@ paths:
                 data:
                   $ref: '#/definitions/dto.KostResponse'
               type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.Response'
         "404":
           description: Kost not found
           schema:
@@ -1029,8 +1054,6 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/utils.Response'
-      security:
-      - BearerAuth: []
       summary: Get kost by ID
       tags:
       - Kost

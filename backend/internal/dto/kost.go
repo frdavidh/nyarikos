@@ -20,6 +20,7 @@ type KostResponse struct {
 	UpdatedAt   time.Time       `json:"updated_at" example:"2024-01-01T00:00:00Z"`
 	Images      []ImageResponse `json:"images,omitempty"`
 	KostType    string          `json:"kost_type" example:"putra"`
+	Rooms       []RoomResponse  `json:"rooms,omitempty"`
 }
 
 type CreateKostRequest struct {
@@ -29,6 +30,18 @@ type CreateKostRequest struct {
 	City        string `json:"city" binding:"required" example:"Jakarta"`
 	IsPremium   *bool  `json:"is_premium" binding:"omitempty" example:"true"`
 	KostType    string `json:"kost_type" binding:"required" example:"putra"`
+}
+
+type SearchKostRequest struct {
+	Q           string
+	MinPrice    float64
+	MaxPrice    float64
+	RoomType    string
+	FacilityIDs []uint
+	City        string
+	KostType    string
+	Page        int
+	Limit       int
 }
 
 type UpdateKostRequest struct {

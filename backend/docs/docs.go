@@ -648,12 +648,7 @@ const docTemplate = `{
         },
         "/kost/": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get a paginated list of all kosts",
+                "description": "Get a paginated list of all kosts with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -674,6 +669,52 @@ const docTemplate = `{
                         "default": 10,
                         "description": "Items per page",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query for name, address, or city",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Minimum room price per month",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "Maximum room price per month",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Room type filter",
+                        "name": "room_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Facility IDs filter (must have all)",
+                        "name": "facility_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "City filter",
+                        "name": "city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Kost type filter (putra/putri/campur)",
+                        "name": "kost_type",
                         "in": "query"
                     }
                 ],
@@ -697,12 +738,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
                         }
                     },
                     "500": {
@@ -789,11 +824,6 @@ const docTemplate = `{
         },
         "/kost/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Get detailed information about a specific kost",
                 "produces": [
                     "application/json"
@@ -828,12 +858,6 @@ const docTemplate = `{
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Response"
                         }
                     },
                     "404": {
@@ -2113,6 +2137,12 @@ const docTemplate = `{
                 "owner_id": {
                     "type": "integer",
                     "example": 1
+                },
+                "rooms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RoomResponse"
+                    }
                 },
                 "updated_at": {
                     "type": "string",

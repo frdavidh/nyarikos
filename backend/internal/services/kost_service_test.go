@@ -5,6 +5,7 @@ import (
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/models"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -103,11 +104,176 @@ func TestKostService_GetAllKost(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	resp, total, err := service.GetAllKost(1, 2)
+	req := &dto.SearchKostRequest{Page: 1, Limit: 2}
+	resp, total, err := service.GetAllKost(req)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(5), total)
 	assert.Len(t, resp, 2)
+}
+
+func TestKostService_GetAllKost_FilterByName(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost Merdeka", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost Sudirman", Address: "Jl. B", City: "Jakarta", KostType: "putra"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	req := &dto.SearchKostRequest{Q: "Merdeka", Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, resp, 1)
+	assert.Equal(t, "Kost Merdeka", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_FilterByCity(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost A", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost B", Address: "Jl. B", City: "Bandung", KostType: "putra"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	req := &dto.SearchKostRequest{City: "Bandung", Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Kost B", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_FilterByKostType(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost A", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost B", Address: "Jl. B", City: "Jakarta", KostType: "putri"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	req := &dto.SearchKostRequest{KostType: "putri", Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Kost B", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_FilterByPriceRange(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost A", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost B", Address: "Jl. B", City: "Jakarta", KostType: "putra"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	room1 := models.Room{KostID: kost1.ID, RoomType: "single", PricePerMonth: decimal.NewFromFloat(1000000), TotalRooms: 1}
+	room2 := models.Room{KostID: kost2.ID, RoomType: "single", PricePerMonth: decimal.NewFromFloat(2000000), TotalRooms: 1}
+	require.NoError(t, db.Create(&room1).Error)
+	require.NoError(t, db.Create(&room2).Error)
+
+	req := &dto.SearchKostRequest{MinPrice: 1500000, MaxPrice: 2500000, Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Kost B", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_FilterByRoomType(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost A", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost B", Address: "Jl. B", City: "Jakarta", KostType: "putra"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	room1 := models.Room{KostID: kost1.ID, RoomType: "single", PricePerMonth: decimal.NewFromFloat(1000000), TotalRooms: 1}
+	room2 := models.Room{KostID: kost2.ID, RoomType: "double", PricePerMonth: decimal.NewFromFloat(2000000), TotalRooms: 1}
+	require.NoError(t, db.Create(&room1).Error)
+	require.NoError(t, db.Create(&room2).Error)
+
+	req := &dto.SearchKostRequest{RoomType: "double", Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Kost B", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_FilterByFacilities(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost A", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost B", Address: "Jl. B", City: "Jakarta", KostType: "putra"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	fac1 := models.Facility{Name: "WiFi"}
+	fac2 := models.Facility{Name: "AC"}
+	require.NoError(t, db.Create(&fac1).Error)
+	require.NoError(t, db.Create(&fac2).Error)
+
+	room1 := models.Room{KostID: kost1.ID, RoomType: "single", PricePerMonth: decimal.NewFromFloat(1000000), TotalRooms: 1}
+	room2 := models.Room{KostID: kost2.ID, RoomType: "single", PricePerMonth: decimal.NewFromFloat(1500000), TotalRooms: 1}
+	require.NoError(t, db.Create(&room1).Error)
+	require.NoError(t, db.Create(&room2).Error)
+
+	require.NoError(t, db.Create(&models.RoomFacility{RoomID: room1.ID, FacilityID: fac1.ID}).Error)
+	require.NoError(t, db.Create(&models.RoomFacility{RoomID: room2.ID, FacilityID: fac1.ID}).Error)
+	require.NoError(t, db.Create(&models.RoomFacility{RoomID: room2.ID, FacilityID: fac2.ID}).Error)
+
+	req := &dto.SearchKostRequest{FacilityIDs: []uint{fac1.ID, fac2.ID}, Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Kost B", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_CombinedFilters(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost1 := models.Kost{OwnerID: 1, Name: "Kost Merdeka", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	kost2 := models.Kost{OwnerID: 1, Name: "Kost Sudirman", Address: "Jl. B", City: "Jakarta", KostType: "putra"}
+	require.NoError(t, db.Create(&kost1).Error)
+	require.NoError(t, db.Create(&kost2).Error)
+
+	room1 := models.Room{KostID: kost1.ID, RoomType: "single", PricePerMonth: decimal.NewFromFloat(1000000), TotalRooms: 1}
+	room2 := models.Room{KostID: kost2.ID, RoomType: "double", PricePerMonth: decimal.NewFromFloat(2000000), TotalRooms: 1}
+	require.NoError(t, db.Create(&room1).Error)
+	require.NoError(t, db.Create(&room2).Error)
+
+	req := &dto.SearchKostRequest{Q: "Sudirman", City: "Jakarta", MinPrice: 1500000, RoomType: "double", Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Kost Sudirman", resp[0].Name)
+}
+
+func TestKostService_GetAllKost_NoResults(t *testing.T) {
+	db := setupTestDB(t)
+	service := NewKostService(db)
+
+	kost := models.Kost{OwnerID: 1, Name: "Kost A", Address: "Jl. A", City: "Jakarta", KostType: "putra"}
+	require.NoError(t, db.Create(&kost).Error)
+
+	req := &dto.SearchKostRequest{Q: "NonExistent", Page: 1, Limit: 10}
+	resp, total, err := service.GetAllKost(req)
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), total)
+	assert.Empty(t, resp)
 }
 
 func TestKostService_UpdateKost_Success(t *testing.T) {

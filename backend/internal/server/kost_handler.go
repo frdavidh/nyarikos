@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
@@ -20,13 +21,15 @@ func NewKostHandler(kostService services.KostService, uploadService *services.Up
 
 func (h *KostHandler) Routes(api *gin.RouterGroup, middlewares ...gin.HandlerFunc) {
 	kost := api.Group("/kost")
-	kost.Use(middlewares...)
 	kost.GET("/", h.GetAllKost)
-	kost.POST("/", h.CreateKost)
 	kost.GET("/:id", h.GetKost)
-	kost.PUT("/:id", h.UpdateKost)
-	kost.DELETE("/:id", h.DeleteKost)
-	kost.POST("/:id/images", h.AddKostImage)
+
+	protected := api.Group("/kost")
+	protected.Use(middlewares...)
+	protected.POST("/", h.CreateKost)
+	protected.PUT("/:id", h.UpdateKost)
+	protected.DELETE("/:id", h.DeleteKost)
+	protected.POST("/:id/images", h.AddKostImage)
 }
 
 // @Tags			Kost
@@ -66,19 +69,39 @@ func (h *KostHandler) CreateKost(c *gin.Context) {
 
 // @Tags			Kost
 // @Summary		Get all kosts
-// @Description	Get a paginated list of all kosts
+// @Description	Get a paginated list of all kosts with optional filters
 // @Produce		json
-// @Security		BearerAuth
-// @Param			page	query		int													false	"Page number"		default(1)
-// @Param			limit	query		int													false	"Items per page"	default(10)
-// @Success		200		{object}	utils.PaginatedResponse{data=[]dto.KostResponse}	"Kost fetched successfully"
-// @Failure		401		{object}	utils.Response										"Unauthorized"
-// @Failure		500		{object}	utils.Response										"Internal server error"
+// @Param			page			query		int													false	"Page number"		default(1)
+// @Param			limit			query		int													false	"Items per page"	default(10)
+// @Param			q				query		string												false	"Search query for name, address, or city"
+// @Param			min_price		query		number												false	"Minimum room price per month"
+// @Param			max_price		query		number												false	"Maximum room price per month"
+// @Param			room_type		query		string												false	"Room type filter"
+// @Param			facility_ids	query		[]int												false	"Facility IDs filter (must have all)"
+// @Param			city			query		string												false	"City filter"
+// @Param			kost_type		query		string												false	"Kost type filter (putra/putri/campur)"
+// @Success		200				{object}	utils.PaginatedResponse{data=[]dto.KostResponse}	"Kost fetched successfully"
+// @Failure		500				{object}	utils.Response										"Internal server error"
 // @Router			/kost/ [get]
 func (h *KostHandler) GetAllKost(c *gin.Context) {
 	page, limit := parsePagination(c)
 
-	kosts, total, err := h.kostService.GetAllKost(page, limit)
+	minPrice, _ := strconv.ParseFloat(c.Query("min_price"), 64)
+	maxPrice, _ := strconv.ParseFloat(c.Query("max_price"), 64)
+
+	req := &dto.SearchKostRequest{
+		Q:           c.Query("q"),
+		MinPrice:    minPrice,
+		MaxPrice:    maxPrice,
+		RoomType:    c.Query("room_type"),
+		FacilityIDs: parseUintSlice(c.QueryArray("facility_ids")),
+		City:        c.Query("city"),
+		KostType:    c.Query("kost_type"),
+		Page:        page,
+		Limit:       limit,
+	}
+
+	kosts, total, err := h.kostService.GetAllKost(req)
 	if err != nil {
 		utils.InternalServerErrorResponse(c, "Failed to get all kost", err)
 		return
@@ -101,10 +124,8 @@ func (h *KostHandler) GetAllKost(c *gin.Context) {
 // @Summary		Get kost by ID
 // @Description	Get detailed information about a specific kost
 // @Produce		json
-// @Security		BearerAuth
 // @Param			id	path		int										true	"Kost ID"
 // @Success		200	{object}	utils.Response{data=dto.KostResponse}	"Kost fetched successfully"
-// @Failure		401	{object}	utils.Response							"Unauthorized"
 // @Failure		404	{object}	utils.Response							"Kost not found"
 // @Failure		500	{object}	utils.Response							"Internal server error"
 // @Router			/kost/{id} [get]
