@@ -44,7 +44,7 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	}
 
 	userID := c.GetUint("user_id")
-	booking, err := h.bookingService.CreateBooking(userID, &req)
+	booking, err := h.bookingService.CreateBooking(c.Request.Context(), userID, &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrRoomNotFound):

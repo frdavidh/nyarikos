@@ -110,7 +110,7 @@ func (h *AuthHandler) refreshToken(c *gin.Context) {
 		return
 	}
 
-	response, err := h.authService.RefreshToken(&req)
+	response, err := h.authService.RefreshToken(c.Request.Context(), &req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrInvalidRefreshToken),
@@ -143,7 +143,7 @@ func (h *AuthHandler) logout(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.Logout(req.RefreshToken); err != nil {
+	if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
 		utils.InternalServerErrorResponse(c, "something went wrong", err)
 		return
 	}
@@ -158,7 +158,11 @@ func (h *AuthHandler) logout(c *gin.Context) {
 // @Success		307	"Redirect to Google"
 // @Router			/auth/google [get]
 func (h *AuthHandler) googleLogin(c *gin.Context) {
-	url := h.authService.GoogleLogin()
+	url, err := h.authService.GoogleLogin(c.Request.Context())
+	if err != nil {
+		utils.InternalServerErrorResponse(c, "failed to initiate google login", err)
+		return
+	}
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -173,12 +177,13 @@ func (h *AuthHandler) googleLogin(c *gin.Context) {
 // @Router			/auth/google/callback [get]
 func (h *AuthHandler) googleCallback(c *gin.Context) {
 	code := c.Query("code")
+	state := c.Query("state")
 	if code == "" {
 		utils.BadRequestResponse(c, "missing oauth code", nil)
 		return
 	}
 
-	response, err := h.authService.GoogleCallback(code)
+	response, err := h.authService.GoogleCallback(c.Request.Context(), code, state)
 	if err != nil {
 		utils.InternalServerErrorResponse(c, "google oauth failed", err)
 		return

@@ -8,6 +8,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestBookingHandler_CreateBooking_Success(t *testing.T) {
@@ -24,7 +25,7 @@ func TestBookingHandler_CreateBooking_Success(t *testing.T) {
 		EndDate:   time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	mockBooking.On("CreateBooking", uint(1), &reqBody).Return(&dto.BookingResponse{
+	mockBooking.On("CreateBooking", mock.Anything, uint(1), &reqBody).Return(&dto.BookingResponse{
 		ID:              1,
 		RoomID:          1,
 		UserID:          1,
@@ -72,7 +73,7 @@ func TestBookingHandler_CreateBooking_RoomNotFound(t *testing.T) {
 		EndDate:   time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	mockBooking.On("CreateBooking", uint(1), &reqBody).Return(nil, services.ErrRoomNotFound)
+	mockBooking.On("CreateBooking", mock.Anything, uint(1), &reqBody).Return(nil, services.ErrRoomNotFound)
 
 	w := makeRequest(t, router, "POST", "/api/v1/booking/", reqBody, nil)
 
@@ -96,7 +97,7 @@ func TestBookingHandler_CreateBooking_NoRoomsAvailable(t *testing.T) {
 		EndDate:   time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	mockBooking.On("CreateBooking", uint(1), &reqBody).Return(nil, services.ErrNoRoomsAvailable)
+	mockBooking.On("CreateBooking", mock.Anything, uint(1), &reqBody).Return(nil, services.ErrNoRoomsAvailable)
 
 	w := makeRequest(t, router, "POST", "/api/v1/booking/", reqBody, nil)
 
@@ -120,7 +121,7 @@ func TestBookingHandler_CreateBooking_GenericError(t *testing.T) {
 		EndDate:   time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	mockBooking.On("CreateBooking", uint(1), &reqBody).Return(nil, assert.AnError)
+	mockBooking.On("CreateBooking", mock.Anything, uint(1), &reqBody).Return(nil, assert.AnError)
 
 	w := makeRequest(t, router, "POST", "/api/v1/booking/", reqBody, nil)
 

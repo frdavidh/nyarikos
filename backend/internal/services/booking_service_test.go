@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 func TestCreateBooking_Success(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewBookingService(db)
+	service := NewBookingService(db, nil)
 
 	room := models.Room{
 		KostID:     1,
@@ -29,7 +30,7 @@ func TestCreateBooking_Success(t *testing.T) {
 		EndDate:   time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	resp, err := service.CreateBooking(1, req)
+	resp, err := service.CreateBooking(context.Background(), 1, req)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -42,7 +43,7 @@ func TestCreateBooking_Success(t *testing.T) {
 
 func TestCreateBooking_EndDateBeforeStartDate(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewBookingService(db)
+	service := NewBookingService(db, nil)
 
 	req := &dto.CreateBookingRequest{
 		RoomID:    1,
@@ -50,7 +51,7 @@ func TestCreateBooking_EndDateBeforeStartDate(t *testing.T) {
 		EndDate:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	resp, err := service.CreateBooking(1, req)
+	resp, err := service.CreateBooking(context.Background(), 1, req)
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -59,7 +60,7 @@ func TestCreateBooking_EndDateBeforeStartDate(t *testing.T) {
 
 func TestCreateBooking_DurationLessThanOneMonth(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewBookingService(db)
+	service := NewBookingService(db, nil)
 
 	req := &dto.CreateBookingRequest{
 		RoomID:    1,
@@ -67,7 +68,7 @@ func TestCreateBooking_DurationLessThanOneMonth(t *testing.T) {
 		EndDate:   time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
 	}
 
-	resp, err := service.CreateBooking(1, req)
+	resp, err := service.CreateBooking(context.Background(), 1, req)
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -76,7 +77,7 @@ func TestCreateBooking_DurationLessThanOneMonth(t *testing.T) {
 
 func TestCreateBooking_RoomNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewBookingService(db)
+	service := NewBookingService(db, nil)
 
 	req := &dto.CreateBookingRequest{
 		RoomID:    999,
@@ -84,7 +85,7 @@ func TestCreateBooking_RoomNotFound(t *testing.T) {
 		EndDate:   time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	resp, err := service.CreateBooking(1, req)
+	resp, err := service.CreateBooking(context.Background(), 1, req)
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -93,7 +94,7 @@ func TestCreateBooking_RoomNotFound(t *testing.T) {
 
 func TestCreateBooking_NoRoomsAvailable(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewBookingService(db)
+	service := NewBookingService(db, nil)
 
 	room := models.Room{
 		KostID:     1,
@@ -121,7 +122,7 @@ func TestCreateBooking_NoRoomsAvailable(t *testing.T) {
 		EndDate:   time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	resp, err := service.CreateBooking(1, req)
+	resp, err := service.CreateBooking(context.Background(), 1, req)
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -130,7 +131,7 @@ func TestCreateBooking_NoRoomsAvailable(t *testing.T) {
 
 func TestCreateBooking_CancelledBookingDoesNotBlock(t *testing.T) {
 	db := setupTestDB(t)
-	service := NewBookingService(db)
+	service := NewBookingService(db, nil)
 
 	room := models.Room{
 		KostID:     1,
@@ -158,7 +159,7 @@ func TestCreateBooking_CancelledBookingDoesNotBlock(t *testing.T) {
 		EndDate:   time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
 	}
 
-	resp, err := service.CreateBooking(1, req)
+	resp, err := service.CreateBooking(context.Background(), 1, req)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)

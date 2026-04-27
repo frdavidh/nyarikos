@@ -1,13 +1,16 @@
 package services
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/models"
+	"github.com/frdavidh/nyarikos/internal/redis"
 	"gorm.io/gorm"
 )
 
@@ -17,15 +20,16 @@ var (
 )
 
 type BookingService interface {
-	CreateBooking(userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error)
+	CreateBooking(ctx context.Context, userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error)
 }
 
 type bookingService struct {
-	db *gorm.DB
+	db    *gorm.DB
+	redis *redis.Client
 }
 
-func NewBookingService(db *gorm.DB) BookingService {
-	return &bookingService{db: db}
+func NewBookingService(db *gorm.DB, redis *redis.Client) BookingService {
+	return &bookingService{db: db, redis: redis}
 }
 
 func generateBookingCode() string {
@@ -34,7 +38,7 @@ func generateBookingCode() string {
 	return "BK-" + hex.EncodeToString(b)
 }
 
-func (s *bookingService) CreateBooking(userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error) {
+func (s *bookingService) CreateBooking(ctx context.Context, userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error) {
 	if !req.EndDate.After(req.StartDate) {
 		return nil, fmt.Errorf("end_date must be after start_date")
 	}
@@ -46,11 +50,23 @@ func (s *bookingService) CreateBooking(userID uint, req *dto.CreateBookingReques
 		return nil, fmt.Errorf("booking must be at least 1 month")
 	}
 
+	if s.redis != nil {
+		lockKey := fmt.Sprintf("lock:booking:room:%d", req.RoomID)
+		unlock, err := s.redis.Lock(ctx, lockKey, 10*time.Second)
+		if err != nil {
+			if err == redis.ErrLockNotAcquired {
+				return nil, fmt.Errorf("room is being booked, please try again")
+			}
+			return nil, fmt.Errorf("failed to acquire lock: %w", err)
+		}
+		defer unlock()
+	}
+
 	var booking models.Booking
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		var room models.Room
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&room, req.RoomID).Error; err != nil {
+		if err := tx.First(&room, req.RoomID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrRoomNotFound
 			}
@@ -59,7 +75,7 @@ func (s *bookingService) CreateBooking(userID uint, req *dto.CreateBookingReques
 
 		var activeBookings int64
 		if err := tx.Model(&models.Booking{}).
-			Where("room_id = ? AND status IN ?", req.RoomID, []models.BookingStatus{models.BookingPending, models.BookingPaid}).
+			Where("room_id = ? AND STATUS IN ?", req.RoomID, []models.BookingStatus{models.BookingPending, models.BookingPaid}).
 			Count(&activeBookings).Error; err != nil {
 			return fmt.Errorf("failed to count active bookings: %w", err)
 		}

@@ -1,7 +1,11 @@
 package server
 
 import (
+	"context"
+	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/frdavidh/nyarikos/internal/utils"
 	"github.com/gin-gonic/gin"
@@ -46,6 +50,33 @@ func (s *Server) roleMiddleware(allowedRole string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		c.Next()
+	}
+}
+
+func (s *Server) rateLimitMiddleware(req int, window time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		key := fmt.Sprintf("rate_limit:%s:%s", c.ClientIP(), c.FullPath())
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+		defer cancel()
+
+		pipe := s.redis.RDB().Pipeline()
+		incr := pipe.Incr(ctx, key)
+		pipe.Expire(ctx, key, window)
+		_, err := pipe.Exec(ctx)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		count := incr.Val()
+		if count > int64(req) {
+			utils.ErrorResponse(c, http.StatusTooManyRequests, "rate limit exceeded", nil)
+			c.Abort()
+			return
+		}
+
 		c.Next()
 	}
 }
