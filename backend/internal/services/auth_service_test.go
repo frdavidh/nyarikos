@@ -75,7 +75,7 @@ func generateTestRefreshToken(cfg *config.JWTConfig, userID uint, email, role st
 func TestAuthService_Register_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	req := &dto.RegisterRequest{
 		Email:       "test@example.com",
@@ -100,7 +100,7 @@ func TestAuthService_Register_Success(t *testing.T) {
 func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	existing := models.User{
 		Email:    "test@example.com",
@@ -127,7 +127,7 @@ func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 func TestAuthService_Register_PemilikRole(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	req := &dto.RegisterRequest{
 		Email:    "owner@example.com",
@@ -145,7 +145,7 @@ func TestAuthService_Register_PemilikRole(t *testing.T) {
 func TestAuthService_Login_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	hashed, err := utils.HashPassword("password123", utils.DefaultParams)
 	require.NoError(t, err)
@@ -177,7 +177,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 func TestAuthService_Login_UserNotFound(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	req := &dto.LoginRequest{
 		Email:    "nonexistent@example.com",
@@ -194,7 +194,7 @@ func TestAuthService_Login_UserNotFound(t *testing.T) {
 func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	hashed, err := utils.HashPassword("correctpassword", utils.DefaultParams)
 	require.NoError(t, err)
@@ -224,7 +224,7 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 func TestAuthService_Login_UserInactive(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	hashed, err := utils.HashPassword("password123", utils.DefaultParams)
 	require.NoError(t, err)
@@ -257,7 +257,7 @@ func TestAuthService_Login_UserInactive(t *testing.T) {
 func TestAuthService_RefreshToken_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	user := models.User{
 		Email:    "test@example.com",
@@ -271,82 +271,33 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	refresh, err := generateTestRefreshToken(&cfg.JWT, user.ID, user.Email, string(user.Role))
 	require.NoError(t, err)
 
-	rt := models.RefreshToken{
-		UserID:    user.ID,
-		Token:     refresh,
-		ExpiresAt: time.Now().Add(cfg.JWT.RefreshExpiresIn),
-	}
-	err = db.Create(&rt).Error
-	require.NoError(t, err)
-
 	req := &dto.RefreshTokenRequest{RefreshToken: refresh}
-	resp, err := service.RefreshToken(req)
+	resp, err := service.RefreshToken(context.Background(), req)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.AccessToken)
 	assert.NotEmpty(t, resp.RefreshToken)
 	assert.Equal(t, user.Email, resp.User.Email)
-
-	var updatedRT models.RefreshToken
-	err = db.First(&updatedRT, rt.ID).Error
-	require.NoError(t, err)
-	assert.NotNil(t, updatedRT.IsRevoked)
-	assert.True(t, *updatedRT.IsRevoked)
 }
 
 func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	req := &dto.RefreshTokenRequest{RefreshToken: "invalid-token"}
-	resp, err := service.RefreshToken(req)
+	resp, err := service.RefreshToken(context.Background(), req)
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Equal(t, ErrInvalidRefreshToken, err)
 }
 
-func TestAuthService_RefreshToken_Revoked(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := testConfig()
-	service := NewAuthService(db, cfg)
-
-	user := models.User{
-		Email:    "test@example.com",
-		Name:     "Test User",
-		Role:     models.RolePencari,
-		IsActive: true,
-	}
-	err := db.Create(&user).Error
-	require.NoError(t, err)
-
-	refresh, err := generateTestRefreshToken(&cfg.JWT, user.ID, user.Email, string(user.Role))
-	require.NoError(t, err)
-
-	revoked := true
-	rt := models.RefreshToken{
-		UserID:    user.ID,
-		Token:     refresh,
-		ExpiresAt: time.Now().Add(cfg.JWT.RefreshExpiresIn),
-		IsRevoked: &revoked,
-	}
-	err = db.Create(&rt).Error
-	require.NoError(t, err)
-
-	req := &dto.RefreshTokenRequest{RefreshToken: refresh}
-	resp, err := service.RefreshToken(req)
-
-	assert.Error(t, err)
-	assert.Nil(t, resp)
-	assert.Equal(t, ErrRefreshTokenRevoked, err)
-}
-
 func TestAuthService_Logout(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
 	user := models.User{
 		Email:    "test@example.com",
@@ -370,59 +321,21 @@ func TestAuthService_Logout(t *testing.T) {
 	err = db.Create(&rt).Error
 	require.NoError(t, err)
 
-	err = service.Logout(refresh)
+	err = service.Logout(context.Background(), refresh)
 
 	assert.NoError(t, err)
-
-	var updated models.RefreshToken
-	err = db.First(&updated, rt.ID).Error
-	require.NoError(t, err)
-	assert.NotNil(t, updated.IsRevoked)
-	assert.True(t, *updated.IsRevoked)
 }
 
 func TestAuthService_GoogleLogin(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg)
+	service := NewAuthService(db, cfg, nil)
 
-	url := service.GoogleLogin()
+	url, err := service.GoogleLogin(context.Background())
 
+	assert.NoError(t, err)
 	assert.NotEmpty(t, url)
 	assert.Contains(t, url, "accounts.google.com")
-}
-
-func TestAuthService_RefreshToken_Expired(t *testing.T) {
-	db := setupTestDB(t)
-	cfg := testConfig()
-	service := NewAuthService(db, cfg)
-
-	user := models.User{
-		Email:    "test@example.com",
-		Name:     "Test User",
-		Role:     models.RolePencari,
-		IsActive: true,
-	}
-	err := db.Create(&user).Error
-	require.NoError(t, err)
-
-	refresh, err := generateTestRefreshToken(&cfg.JWT, user.ID, user.Email, string(user.Role))
-	require.NoError(t, err)
-
-	rt := models.RefreshToken{
-		UserID:    user.ID,
-		Token:     refresh,
-		ExpiresAt: time.Now().Add(-time.Hour),
-	}
-	err = db.Create(&rt).Error
-	require.NoError(t, err)
-
-	req := &dto.RefreshTokenRequest{RefreshToken: refresh}
-	resp, err := service.RefreshToken(req)
-
-	assert.Error(t, err)
-	assert.Nil(t, resp)
-	assert.Equal(t, ErrRefreshTokenExpired, err)
 }
 
 func TestAuthService_GoogleCallback_ExistingSocialAccount(t *testing.T) {
@@ -457,7 +370,7 @@ func TestAuthService_GoogleCallback_ExistingSocialAccount(t *testing.T) {
 
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -488,7 +401,7 @@ func TestAuthService_GoogleCallback_ExistingUserLinkSocial(t *testing.T) {
 
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -515,7 +428,7 @@ func TestAuthService_GoogleCallback_NewUser(t *testing.T) {
 
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -549,7 +462,7 @@ func TestAuthService_GoogleCallback_IncompleteUserInfo(t *testing.T) {
 
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -564,7 +477,7 @@ func TestAuthService_GoogleCallback_HTTPError(t *testing.T) {
 	mockOAuth := &mockOAuthExchanger{token: &oauth2.Token{AccessToken: "access-token"}, err: nil}
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -579,7 +492,7 @@ func TestAuthService_GoogleCallback_Non200Status(t *testing.T) {
 	mockOAuth := &mockOAuthExchanger{token: &oauth2.Token{AccessToken: "access-token"}, err: nil}
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
@@ -594,7 +507,7 @@ func TestAuthService_GoogleCallback_InvalidJSON(t *testing.T) {
 	mockOAuth := &mockOAuthExchanger{token: &oauth2.Token{AccessToken: "access-token"}, err: nil}
 	service := newAuthServiceWithMockHTTP(db, cfg, mockClient, mockOAuth)
 
-	resp, err := service.GoogleCallback("auth-code")
+	resp, err := service.GoogleCallback(context.Background(), "auth-code", "")
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)

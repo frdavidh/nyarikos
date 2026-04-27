@@ -1,10 +1,13 @@
 package server
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/models"
+	"github.com/frdavidh/nyarikos/internal/redis"
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -23,10 +26,12 @@ type Server struct {
 	bookingService services.BookingService
 	paymentService services.PaymentService
 	uploadService  *services.UploadService
+	redis          *redis.Client
 }
 
 func New(cfg *config.Config,
 	logger *zerolog.Logger,
+	redis *redis.Client,
 	authService services.AuthService,
 	userService services.UserService,
 	kostService services.KostService,
@@ -38,6 +43,7 @@ func New(cfg *config.Config,
 	return &Server{
 		config:         cfg,
 		logger:         logger,
+		redis:          redis,
 		authService:    authService,
 		userService:    userService,
 		kostService:    kostService,
@@ -67,6 +73,7 @@ func (s *Server) SetupRoutes() *gin.Engine {
 	paymentHandler := NewPaymentHandler(s.paymentService)
 
 	api := router.Group("api/v1")
+	api.Use(s.rateLimitMiddleware(100, time.Minute))
 	authHandler.Routes(api)
 	userHandler.Routes(api, s.authMiddleware())
 	kostHandler.Routes(api, s.authMiddleware(), s.roleMiddleware(string(models.RolePemilik)))
@@ -78,9 +85,24 @@ func (s *Server) SetupRoutes() *gin.Engine {
 }
 
 func (s *Server) healthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"status": "ok",
-	})
+	}
+
+	if s.redis != nil {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+		defer cancel()
+
+		if err := s.redis.RDB().Ping(ctx).Err(); err != nil {
+			response["redis"] = "unreachable"
+		} else {
+			response["redis"] = "connected"
+		}
+	} else {
+		response["redis"] = "disabled"
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) corsMiddleware() gin.HandlerFunc {

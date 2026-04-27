@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +14,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/models"
+	"github.com/frdavidh/nyarikos/internal/redis"
 	"github.com/frdavidh/nyarikos/internal/utils"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -31,10 +34,10 @@ var (
 type AuthService interface {
 	Register(req *dto.RegisterRequest) (*dto.AuthResponse, error)
 	Login(req *dto.LoginRequest) (*dto.AuthResponse, error)
-	RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error)
-	Logout(refreshToken string) error
-	GoogleLogin() string
-	GoogleCallback(code string) (*dto.AuthResponse, error)
+	RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error)
+	Logout(ctx context.Context, refreshToken string) error
+	GoogleLogin(ctx context.Context) (string, error)
+	GoogleCallback(ctx context.Context, code, state string) (*dto.AuthResponse, error)
 }
 
 type httpClient interface {
@@ -58,19 +61,21 @@ type authService struct {
 	config        *config.Config
 	httpClient    httpClient
 	oauthExchange oauthExchanger
+	redisClient   *redis.Client
 }
 
-func NewAuthService(db *gorm.DB, config *config.Config) AuthService {
+func NewAuthService(db *gorm.DB, config *config.Config, redisClient *redis.Client) AuthService {
 	svc := &authService{
-		db:         db,
-		config:     config,
-		httpClient: &http.Client{Timeout: 10 * time.Second},
+		db:          db,
+		config:      config,
+		httpClient:  &http.Client{Timeout: 10 * time.Second},
+		redisClient: redisClient,
 	}
 	svc.oauthExchange = &oauth2Wrapper{config: svc.oauthConfig()}
 	return svc
 }
 
-func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse, error) {
+func (s *authService) generateAuthResponse(ctx context.Context, user *models.User) (*dto.AuthResponse, error) {
 	accessToken, refreshToken, err := utils.GenerateTokenPair(
 		&s.config.JWT,
 		user.ID,
@@ -81,13 +86,11 @@ func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse
 		return nil, err
 	}
 
-	refreshTokenRecord := models.RefreshToken{
-		UserID:    user.ID,
-		Token:     refreshToken,
-		ExpiresAt: time.Now().Add(s.config.JWT.RefreshExpiresIn),
-	}
-	if err := s.db.Create(&refreshTokenRecord).Error; err != nil {
-		return nil, fmt.Errorf("failed to save refresh token: %w", err)
+	if s.redisClient != nil {
+		tokenStore := redis.NewTokenStore(s.redisClient)
+		if err := tokenStore.SaveRefreshToken(ctx, user.ID, refreshToken, s.config.JWT.RefreshExpiresIn); err != nil {
+			return nil, fmt.Errorf("failed to save refresh token: %w", err)
+		}
 	}
 
 	return &dto.AuthResponse{
@@ -143,7 +146,7 @@ func (s *authService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, err
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return s.generateAuthResponse(&user)
+	return s.generateAuthResponse(context.Background(), &user)
 }
 
 func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, error) {
@@ -164,26 +167,60 @@ func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, error) {
 		return nil, ErrInvalidPassword
 	}
 
-	return s.generateAuthResponse(&user)
+	return s.generateAuthResponse(context.Background(), &user)
 }
 
-func (s *authService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
+// func (s *authService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
+// 	claims, err := utils.ValidateToken(req.RefreshToken, s.config.JWT.Secret)
+// 	if err != nil {
+// 		return nil, ErrInvalidRefreshToken
+// 	}
+
+// 	var refreshToken models.RefreshToken
+// 	if err := s.db.Where("token = ?", req.RefreshToken).First(&refreshToken).Error; err != nil {
+// 		return nil, ErrInvalidRefreshToken
+// 	}
+
+// 	if refreshToken.IsRevoked != nil && *refreshToken.IsRevoked {
+// 		return nil, ErrRefreshTokenRevoked
+// 	}
+
+// 	if refreshToken.ExpiresAt.Before(time.Now()) {
+// 		return nil, ErrRefreshTokenExpired
+// 	}
+
+// 	var user models.User
+// 	if err := s.db.Where("id = ?", claims.UserID).First(&user).Error; err != nil {
+// 		return nil, ErrUserNotFound
+// 	}
+
+// 	if err := s.db.Model(&refreshToken).Update("is_revoked", true).Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	return s.generateAuthResponse(&user)
+// }
+
+func (s *authService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
 	claims, err := utils.ValidateToken(req.RefreshToken, s.config.JWT.Secret)
 	if err != nil {
 		return nil, ErrInvalidRefreshToken
 	}
 
-	var refreshToken models.RefreshToken
-	if err := s.db.Where("token = ?", req.RefreshToken).First(&refreshToken).Error; err != nil {
-		return nil, ErrInvalidRefreshToken
-	}
+	if s.redisClient != nil {
+		tokenStore := redis.NewTokenStore(s.redisClient)
+		userID, err := tokenStore.GetUserIDByRefreshToken(ctx, req.RefreshToken)
+		if err != nil {
+			return nil, ErrInvalidRefreshToken
+		}
 
-	if refreshToken.IsRevoked != nil && *refreshToken.IsRevoked {
-		return nil, ErrRefreshTokenRevoked
-	}
+		if userID != claims.UserID {
+			return nil, ErrInvalidRefreshToken
+		}
 
-	if refreshToken.ExpiresAt.Before(time.Now()) {
-		return nil, ErrRefreshTokenExpired
+		if err := tokenStore.RevokeRefreshToken(ctx, req.RefreshToken); err != nil {
+			return nil, fmt.Errorf("failed to revoke old token: %w", err)
+		}
 	}
 
 	var user models.User
@@ -191,15 +228,15 @@ func (s *authService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthRespo
 		return nil, ErrUserNotFound
 	}
 
-	if err := s.db.Model(&refreshToken).Update("is_revoked", true).Error; err != nil {
-		return nil, err
-	}
-
-	return s.generateAuthResponse(&user)
+	return s.generateAuthResponse(ctx, &user)
 }
 
-func (s *authService) Logout(refreshToken string) error {
-	return s.db.Model(&models.RefreshToken{}).Where("token = ?", refreshToken).Update("is_revoked", true).Error
+func (s *authService) Logout(ctx context.Context, refreshToken string) error {
+	if s.redisClient == nil {
+		return nil
+	}
+	tokenStore := redis.NewTokenStore(s.redisClient)
+	return tokenStore.RevokeRefreshToken(ctx, refreshToken)
 }
 
 func (s *authService) oauthConfig() *oauth2.Config {
@@ -212,8 +249,22 @@ func (s *authService) oauthConfig() *oauth2.Config {
 	}
 }
 
-func (s *authService) GoogleLogin() string {
-	return s.oauthConfig().AuthCodeURL("state", oauth2.AccessTypeOffline)
+func generateState() string {
+	b := make([]byte, 32)
+	_, _ = rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
+}
+
+func (s *authService) GoogleLogin(ctx context.Context) (string, error) {
+	state := generateState()
+
+	if s.redisClient != nil {
+		key := fmt.Sprintf("oauth:state:%s", state)
+		if err := s.redisClient.RDB().Set(ctx, key, "pending", 5*time.Minute).Err(); err != nil {
+			return "", fmt.Errorf("failed to store state: %w", err)
+		}
+	}
+	return s.oauthConfig().AuthCodeURL(state, oauth2.AccessTypeOffline), nil
 }
 
 type googleUserInfo struct {
@@ -222,8 +273,16 @@ type googleUserInfo struct {
 	Name  string `json:"name"`
 }
 
-func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
-	token, err := s.oauthExchange.Exchange(context.Background(), code)
+func (s *authService) GoogleCallback(ctx context.Context, code, state string) (*dto.AuthResponse, error) {
+	if s.redisClient != nil {
+		key := fmt.Sprintf("oauth:state:%s", state)
+		_, err := s.redisClient.RDB().Get(ctx, key).Result()
+		if err != nil {
+			return nil, errors.New("invalid OAuth state")
+		}
+	}
+
+	token, err := s.oauthExchange.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange oauth code: %w", err)
 	}
@@ -244,7 +303,7 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 		if err := s.db.First(&user, social.UserID).Error; err != nil {
 			return nil, ErrUserNotFound
 		}
-		return s.generateAuthResponse(&user)
+		return s.generateAuthResponse(ctx, &user)
 	}
 
 	var user models.User
@@ -269,7 +328,7 @@ func (s *authService) GoogleCallback(code string) (*dto.AuthResponse, error) {
 		return nil, fmt.Errorf("failed to link google account: %w", err)
 	}
 
-	return s.generateAuthResponse(&user)
+	return s.generateAuthResponse(ctx, &user)
 }
 
 func (s *authService) fetchGoogleUserInfo(accessToken string) (*googleUserInfo, error) {

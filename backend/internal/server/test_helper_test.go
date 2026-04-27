@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -87,26 +88,26 @@ func (m *mockAuthService) Login(req *dto.LoginRequest) (*dto.AuthResponse, error
 	return args.Get(0).(*dto.AuthResponse), args.Error(1)
 }
 
-func (m *mockAuthService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
-	args := m.Called(req)
+func (m *mockAuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
+	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*dto.AuthResponse), args.Error(1)
 }
 
-func (m *mockAuthService) Logout(refreshToken string) error {
-	args := m.Called(refreshToken)
+func (m *mockAuthService) Logout(ctx context.Context, refreshToken string) error {
+	args := m.Called(ctx, refreshToken)
 	return args.Error(0)
 }
 
-func (m *mockAuthService) GoogleLogin() string {
-	args := m.Called()
-	return args.String(0)
+func (m *mockAuthService) GoogleLogin(ctx context.Context) (string, error) {
+	args := m.Called(ctx)
+	return args.String(0), args.Error(1)
 }
 
-func (m *mockAuthService) GoogleCallback(code string) (*dto.AuthResponse, error) {
-	args := m.Called(code)
+func (m *mockAuthService) GoogleCallback(ctx context.Context, code, state string) (*dto.AuthResponse, error) {
+	args := m.Called(ctx, code, state)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -277,8 +278,8 @@ type mockBookingService struct {
 	mock.Mock
 }
 
-func (m *mockBookingService) CreateBooking(userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error) {
-	args := m.Called(userID, req)
+func (m *mockBookingService) CreateBooking(ctx context.Context, userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error) {
+	args := m.Called(ctx, userID, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/interfaces"
 	"github.com/frdavidh/nyarikos/internal/logger"
 	"github.com/frdavidh/nyarikos/internal/providers"
+	"github.com/frdavidh/nyarikos/internal/redis"
 	"github.com/frdavidh/nyarikos/internal/server"
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
@@ -42,11 +43,17 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
-	authService := services.NewAuthService(db, cfg)
+	redisClient, err := redis.New(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to redis")
+	}
+	defer redisClient.Close()
+
+	authService := services.NewAuthService(db, cfg, redisClient)
 	userService := services.NewUserService(db)
 	kostService := services.NewKostService(db)
 	roomService := services.NewRoomService(db)
-	bookingService := services.NewBookingService(db)
+	bookingService := services.NewBookingService(db, redisClient)
 	paymentService := services.NewPaymentService(db, &cfg.Midtrans)
 
 	var uploadProvider interfaces.UploadProvider
@@ -83,6 +90,7 @@ func main() {
 	srv := server.New(
 		cfg,
 		&log,
+		redisClient,
 		authService,
 		userService,
 		kostService,

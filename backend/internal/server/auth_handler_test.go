@@ -8,6 +8,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestAuthHandler_Register_Success(t *testing.T) {
@@ -148,7 +149,7 @@ func TestAuthHandler_RefreshToken_Success(t *testing.T) {
 
 	reqBody := dto.RefreshTokenRequest{RefreshToken: "old-refresh-token"}
 
-	mockAuth.On("RefreshToken", &reqBody).Return(&dto.AuthResponse{
+	mockAuth.On("RefreshToken", mock.Anything, &reqBody).Return(&dto.AuthResponse{
 		AccessToken:  "new-access-token",
 		RefreshToken: "new-refresh-token",
 	}, nil)
@@ -172,7 +173,7 @@ func TestAuthHandler_RefreshToken_InvalidToken(t *testing.T) {
 
 	reqBody := dto.RefreshTokenRequest{RefreshToken: "invalid-token"}
 
-	mockAuth.On("RefreshToken", &reqBody).Return(nil, services.ErrInvalidRefreshToken)
+	mockAuth.On("RefreshToken", mock.Anything, &reqBody).Return(nil, services.ErrInvalidRefreshToken)
 
 	w := makeRequest(t, router, "POST", "/api/v1/auth/refresh", reqBody, nil)
 
@@ -192,7 +193,7 @@ func TestAuthHandler_Logout_Success(t *testing.T) {
 
 	reqBody := dto.RefreshTokenRequest{RefreshToken: "refresh-token"}
 
-	mockAuth.On("Logout", "refresh-token").Return(nil)
+	mockAuth.On("Logout", mock.Anything, "refresh-token").Return(nil)
 
 	w := makeRequest(t, router, "POST", "/api/v1/auth/logout", reqBody, nil)
 
@@ -213,7 +214,7 @@ func TestAuthHandler_Logout_ServiceError(t *testing.T) {
 
 	reqBody := dto.RefreshTokenRequest{RefreshToken: "refresh-token"}
 
-	mockAuth.On("Logout", "refresh-token").Return(assert.AnError)
+	mockAuth.On("Logout", mock.Anything, "refresh-token").Return(assert.AnError)
 
 	w := makeRequest(t, router, "POST", "/api/v1/auth/logout", reqBody, nil)
 
@@ -231,7 +232,7 @@ func TestAuthHandler_GoogleLogin(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api)
 
-	mockAuth.On("GoogleLogin").Return("https://accounts.google.com/oauth/authorize?...")
+	mockAuth.On("GoogleLogin", mock.Anything).Return("https://accounts.google.com/oauth/authorize?...", nil)
 
 	w := makeRequest(t, router, "GET", "/api/v1/auth/google", nil, nil)
 
@@ -248,7 +249,7 @@ func TestAuthHandler_GoogleCallback_Success(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api)
 
-	mockAuth.On("GoogleCallback", "auth-code").Return(&dto.AuthResponse{
+	mockAuth.On("GoogleCallback", mock.Anything, "auth-code", "").Return(&dto.AuthResponse{
 		AccessToken:  "access-token",
 		RefreshToken: "refresh-token",
 		User: dto.UserResponse{
@@ -290,7 +291,7 @@ func TestAuthHandler_GoogleCallback_ServiceError(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api)
 
-	mockAuth.On("GoogleCallback", "auth-code").Return(nil, errors.New("oauth failed"))
+	mockAuth.On("GoogleCallback", mock.Anything, "auth-code", "").Return(nil, errors.New("oauth failed"))
 
 	w := makeRequest(t, router, "GET", "/api/v1/auth/google/callback?code=auth-code", nil, nil)
 

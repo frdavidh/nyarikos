@@ -19,7 +19,9 @@ type Config struct {
 	Upload   UploadConfig
 	OAuth2   OAuth2Config
 	Midtrans MidtransConfig
+	Redis    RedisConfig
 }
+
 type ServerConfig struct {
 	Port    string
 	GinMode string
@@ -69,6 +71,12 @@ type MidtransConfig struct {
 	IsProduction bool
 }
 
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
@@ -84,6 +92,7 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid MAX_UPLOAD_SIZE: %w", err)
 	}
+	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 
 	return &Config{
 		Server: ServerConfig{
@@ -127,6 +136,11 @@ func Load() (*Config, error) {
 			ClientKey:    getEnv("MIDTRANS_CLIENT_KEY", ""),
 			MerchantID:   getEnv("MIDTRANS_MERCHANT_ID", ""),
 			IsProduction: getEnv("MIDTRANS_ENV", "sandbox") == "production",
+		},
+		Redis: RedisConfig{
+			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       redisDB,
 		},
 	}, nil
 }

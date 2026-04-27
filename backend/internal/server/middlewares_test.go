@@ -13,7 +13,7 @@ import (
 )
 
 func setupMiddlewareServer(cfg *config.Config) *Server {
-	return New(cfg, nil, nil, nil, nil, nil, nil, nil, nil)
+	return New(cfg, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func TestAuthMiddleware_NoHeader(t *testing.T) {
