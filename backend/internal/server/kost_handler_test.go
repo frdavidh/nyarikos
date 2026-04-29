@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"mime/multipart"
 	"net/http"
 	"testing"
@@ -463,7 +464,7 @@ func TestKostHandler_AddKostImage_UploadGenericError(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
 
-	mockUpload.On("UploadFile", mock.Anything, mock.Anything).Return("", assert.AnError)
+	mockUpload.On("UploadFile", mock.Anything, mock.Anything, mock.Anything).Return("", assert.AnError)
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
@@ -489,7 +490,7 @@ func TestKostHandler_AddKostImage_KostNotFoundAfterUpload(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
 
-	mockUpload.On("UploadFile", mock.Anything, mock.Anything).Return("https://cdn.example.com/img.jpg", nil)
+	mockUpload.On("UploadFile", mock.Anything, mock.Anything, mock.Anything).Return("https://cdn.example.com/img.jpg", nil)
 	mockKost.On("AddKostImage", uint(1), uint(1), "https://cdn.example.com/img.jpg", "Test").Return(services.ErrKostNotFound)
 
 	var b bytes.Buffer
@@ -516,7 +517,7 @@ func TestKostHandler_AddKostImage_UnauthorizedAfterUpload(t *testing.T) {
 	api := router.Group("/api/v1")
 	handler.Routes(api, authMiddlewareForTest(1, "pemilik"))
 
-	mockUpload.On("UploadFile", mock.Anything, mock.Anything).Return("https://cdn.example.com/img.jpg", nil)
+	mockUpload.On("UploadFile", mock.Anything, mock.Anything, mock.Anything).Return("https://cdn.example.com/img.jpg", nil)
 	mockKost.On("AddKostImage", uint(1), uint(1), "https://cdn.example.com/img.jpg", "Test").Return(services.ErrUnauthorized)
 
 	var b bytes.Buffer
@@ -537,13 +538,13 @@ type mockUploadProvider struct {
 	mock.Mock
 }
 
-func (m *mockUploadProvider) UploadFile(file *multipart.FileHeader, path string) (string, error) {
-	args := m.Called(file, path)
+func (m *mockUploadProvider) UploadFile(ctx context.Context, file *multipart.FileHeader, path string) (string, error) {
+	args := m.Called(ctx, file, path)
 	return args.String(0), args.Error(1)
 }
 
-func (m *mockUploadProvider) DeleteFile(path string) error {
-	args := m.Called(path)
+func (m *mockUploadProvider) DeleteFile(ctx context.Context, path string) error {
+	args := m.Called(ctx, path)
 	return args.Error(0)
 }
 

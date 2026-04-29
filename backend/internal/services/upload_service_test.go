@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"mime/multipart"
 	"testing"
@@ -14,13 +15,13 @@ type mockUploadProvider struct {
 	mock.Mock
 }
 
-func (m *mockUploadProvider) UploadFile(file *multipart.FileHeader, path string) (string, error) {
-	args := m.Called(file, path)
+func (m *mockUploadProvider) UploadFile(ctx context.Context, file *multipart.FileHeader, path string) (string, error) {
+	args := m.Called(ctx, file, path)
 	return args.String(0), args.Error(1)
 }
 
-func (m *mockUploadProvider) DeleteFile(path string) error {
-	args := m.Called(path)
+func (m *mockUploadProvider) DeleteFile(ctx context.Context, path string) error {
+	args := m.Called(ctx, path)
 	return args.Error(0)
 }
 
@@ -29,9 +30,9 @@ func TestUploadService_UploadFile(t *testing.T) {
 	service := NewUploadService(mockProvider)
 
 	file := &multipart.FileHeader{Filename: "test.jpg"}
-	mockProvider.On("UploadFile", file, "uploads/test.jpg").Return("https://cdn.example.com/test.jpg", nil)
+	mockProvider.On("UploadFile", mock.Anything, file, "uploads/test.jpg").Return("https://cdn.example.com/test.jpg", nil)
 
-	url, err := service.UploadFile(file, "uploads/test.jpg")
+	url, err := service.UploadFile(context.Background(), file, "uploads/test.jpg")
 
 	assert.NoError(t, err)
 	assert.Equal(t, "https://cdn.example.com/test.jpg", url)
@@ -42,9 +43,9 @@ func TestUploadService_DeleteFile(t *testing.T) {
 	mockProvider := new(mockUploadProvider)
 	service := NewUploadService(mockProvider)
 
-	mockProvider.On("DeleteFile", "uploads/test.jpg").Return(nil)
+	mockProvider.On("DeleteFile", mock.Anything, "uploads/test.jpg").Return(nil)
 
-	err := service.DeleteFile("uploads/test.jpg")
+	err := service.DeleteFile(context.Background(), "uploads/test.jpg")
 
 	assert.NoError(t, err)
 	mockProvider.AssertExpectations(t)
@@ -55,9 +56,9 @@ func TestUploadService_UploadKostImage_Success(t *testing.T) {
 	service := NewUploadService(mockProvider)
 
 	file := &multipart.FileHeader{Filename: "kost.jpg"}
-	mockProvider.On("UploadFile", file, "kost/1/kost.jpg").Return("https://cdn.example.com/kost/1/kost.jpg", nil)
+	mockProvider.On("UploadFile", mock.Anything, file, "kost/1/kost.jpg").Return("https://cdn.example.com/kost/1/kost.jpg", nil)
 
-	url, err := service.UploadKostImage(1, file)
+	url, err := service.UploadKostImage(context.Background(), 1, file)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "https://cdn.example.com/kost/1/kost.jpg", url)
@@ -70,7 +71,7 @@ func TestUploadService_UploadKostImage_InvalidExtension(t *testing.T) {
 
 	file := &multipart.FileHeader{Filename: "kost.pdf"}
 
-	url, err := service.UploadKostImage(1, file)
+	url, err := service.UploadKostImage(context.Background(), 1, file)
 
 	assert.Error(t, err)
 	assert.Empty(t, url)
@@ -83,7 +84,7 @@ func TestUploadService_UploadKostImage_InvalidExtension_BMP(t *testing.T) {
 
 	file := &multipart.FileHeader{Filename: "kost.bmp"}
 
-	url, err := service.UploadKostImage(1, file)
+	url, err := service.UploadKostImage(context.Background(), 1, file)
 
 	assert.Error(t, err)
 	assert.Empty(t, url)

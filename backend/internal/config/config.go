@@ -23,17 +23,21 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port    string
-	GinMode string
+	Port        string
+	GinMode     string
+	SwaggerHost string
 }
 
 type DatabaseConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Name     string
-	SSLMode  string
+	Host            string
+	Port            string
+	User            string
+	Password        string
+	Name            string
+	SSLMode         string
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
 }
 
 type JWTConfig struct {
@@ -94,18 +98,35 @@ func Load() (*Config, error) {
 	}
 	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
 
+	maxOpenConns, err := strconv.Atoi(getEnv("DB_MAX_OPEN_CONNS", "25"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid DB_MAX_OPEN_CONNS: %w", err)
+	}
+	maxIdleConns, err := strconv.Atoi(getEnv("DB_MAX_IDLE_CONNS", "5"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid DB_MAX_IDLE_CONNS: %w", err)
+	}
+	connMaxLifetime, err := time.ParseDuration(getEnv("DB_CONN_MAX_LIFETIME", "1h"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid DB_CONN_MAX_LIFETIME: %w", err)
+	}
+
 	return &Config{
 		Server: ServerConfig{
-			Port:    getEnv("PORT", "8080"),
-			GinMode: getEnv("GIN_MODE", "release"),
+			Port:        getEnv("PORT", "8080"),
+			GinMode:     getEnv("GIN_MODE", "release"),
+			SwaggerHost: getEnv("SWAGGER_HOST", ""),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5432"),
-			User:     getEnv("DB_USER", "postgres"),
-			Password: getEnv("DB_PASSWORD", "password"),
-			Name:     getEnv("DB_NAME", "postgres"),
-			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
+			Host:            getEnv("DB_HOST", "localhost"),
+			Port:            getEnv("DB_PORT", "5432"),
+			User:            getEnv("DB_USER", "postgres"),
+			Password:        getEnv("DB_PASSWORD", "password"),
+			Name:            getEnv("DB_NAME", "postgres"),
+			SSLMode:         getEnv("DB_SSL_MODE", "disable"),
+			MaxOpenConns:    maxOpenConns,
+			MaxIdleConns:    maxIdleConns,
+			ConnMaxLifetime: connMaxLifetime,
 		},
 		JWT: JWTConfig{
 			Secret:           getEnv("JWT_SECRET", "secret"),

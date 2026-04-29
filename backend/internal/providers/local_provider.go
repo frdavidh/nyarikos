@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"context"
 	"fmt"
 	"mime/multipart"
 	"os"
@@ -16,7 +17,7 @@ func NewLocalUploadProvider(basePath string) *LocalUploadProvider {
 	return &LocalUploadProvider{basePath: basePath}
 }
 
-func (p *LocalUploadProvider) UploadFile(file *multipart.FileHeader, path string) (string, error) {
+func (p *LocalUploadProvider) UploadFile(_ context.Context, file *multipart.FileHeader, path string) (string, error) {
 	fullPath := filepath.Join(p.basePath, path)
 
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
@@ -42,7 +43,7 @@ func (p *LocalUploadProvider) UploadFile(file *multipart.FileHeader, path string
 	return fmt.Sprintf("/uploads/%s", path), nil
 }
 
-func (p *LocalUploadProvider) DeleteFile(path string) error {
+func (p *LocalUploadProvider) DeleteFile(_ context.Context, path string) error {
 	// Ensure path does not escape the base directory.
 	relPath := filepath.Join(".", filepath.Clean("/"+path))
 	fullPath := filepath.Join(p.basePath, relPath)

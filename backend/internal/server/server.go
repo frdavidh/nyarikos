@@ -11,6 +11,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
+	"gorm.io/gorm"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,6 +20,7 @@ import (
 type Server struct {
 	config         *config.Config
 	logger         *zerolog.Logger
+	db             *gorm.DB
 	authService    services.AuthService
 	userService    services.UserService
 	kostService    services.KostService
@@ -31,6 +33,7 @@ type Server struct {
 
 func New(cfg *config.Config,
 	logger *zerolog.Logger,
+	db *gorm.DB,
 	redis *redis.Client,
 	authService services.AuthService,
 	userService services.UserService,
@@ -43,6 +46,7 @@ func New(cfg *config.Config,
 	return &Server{
 		config:         cfg,
 		logger:         logger,
+		db:             db,
 		redis:          redis,
 		authService:    authService,
 		userService:    userService,
@@ -89,10 +93,23 @@ func (s *Server) healthCheck(c *gin.Context) {
 		"status": "ok",
 	}
 
-	if s.redis != nil {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
-		defer cancel()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
 
+	if s.db != nil {
+		sqlDB, err := s.db.DB()
+		if err != nil {
+			response["database"] = "unreachable"
+		} else if err := sqlDB.PingContext(ctx); err != nil {
+			response["database"] = "unreachable"
+		} else {
+			response["database"] = "connected"
+		}
+	} else {
+		response["database"] = "disabled"
+	}
+
+	if s.redis != nil {
 		if err := s.redis.RDB().Ping(ctx).Err(); err != nil {
 			response["redis"] = "unreachable"
 		} else {
