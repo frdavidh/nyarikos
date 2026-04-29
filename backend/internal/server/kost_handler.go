@@ -262,7 +262,7 @@ func (h *KostHandler) AddKostImage(c *gin.Context) {
 		return
 	}
 
-	url, err := h.uploadService.UploadKostImage(id, file)
+	url, err := h.uploadService.UploadKostImage(c.Request.Context(), id, file)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrInvalidFileType):

@@ -61,7 +61,7 @@ func main() {
 	case "local":
 		uploadProvider = providers.NewLocalUploadProvider(cfg.Upload.Path)
 	case "s3":
-		uploadProvider, err = providers.NewS3Provider(cfg)
+		uploadProvider, err = providers.NewS3Provider(context.Background(), cfg)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to initialize S3 provider")
 		}
@@ -82,7 +82,11 @@ func main() {
 
 	uploadService := services.NewUploadService(uploadProvider)
 
-	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+	swaggerHost := cfg.Server.SwaggerHost
+	if swaggerHost == "" {
+		swaggerHost = fmt.Sprintf("localhost:%s", cfg.Server.Port)
+	}
+	docs.SwaggerInfo.Host = swaggerHost
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
 	gin.SetMode(cfg.Server.GinMode)
@@ -90,6 +94,7 @@ func main() {
 	srv := server.New(
 		cfg,
 		&log,
+		db,
 		redisClient,
 		authService,
 		userService,

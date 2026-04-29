@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
@@ -19,12 +20,12 @@ func NewUploadService(uploadProvider interfaces.UploadProvider) *UploadService {
 	return &UploadService{uploadProvider: uploadProvider}
 }
 
-func (s *UploadService) UploadFile(file *multipart.FileHeader, path string) (string, error) {
-	return s.uploadProvider.UploadFile(file, path)
+func (s *UploadService) UploadFile(ctx context.Context, file *multipart.FileHeader, path string) (string, error) {
+	return s.uploadProvider.UploadFile(ctx, file, path)
 }
 
-func (s *UploadService) DeleteFile(path string) error {
-	return s.uploadProvider.DeleteFile(path)
+func (s *UploadService) DeleteFile(ctx context.Context, path string) error {
+	return s.uploadProvider.DeleteFile(ctx, path)
 }
 
 var unsafeFilenameChars = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
@@ -35,7 +36,7 @@ func sanitizeFilename(name string) string {
 	return name
 }
 
-func (s *UploadService) UploadKostImage(kostID uint, file *multipart.FileHeader) (string, error) {
+func (s *UploadService) UploadKostImage(ctx context.Context, kostID uint, file *multipart.FileHeader) (string, error) {
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if !isValidImageExt(ext) {
 		return "", fmt.Errorf("%w: %s", ErrInvalidFileType, ext)
@@ -44,7 +45,7 @@ func (s *UploadService) UploadKostImage(kostID uint, file *multipart.FileHeader)
 	safeName := sanitizeFilename(file.Filename)
 	path := fmt.Sprintf("kost/%d/%s", kostID, safeName)
 
-	return s.uploadProvider.UploadFile(file, path)
+	return s.uploadProvider.UploadFile(ctx, file, path)
 }
 
 func isValidImageExt(ext string) bool {

@@ -21,8 +21,8 @@ type S3Provider struct {
 	endpoint string
 }
 
-func NewS3Provider(cfg *appconfig.Config) (*S3Provider, error) {
-	awsCfg, err := config.LoadDefaultConfig(context.TODO(),
+func NewS3Provider(ctx context.Context, cfg *appconfig.Config) (*S3Provider, error) {
+	awsCfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(cfg.AWS.Region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			cfg.AWS.AccessKey,
@@ -49,7 +49,7 @@ func NewS3Provider(cfg *appconfig.Config) (*S3Provider, error) {
 	}, nil
 }
 
-func (p *S3Provider) UploadFile(file *multipart.FileHeader, path string) (string, error) {
+func (p *S3Provider) UploadFile(ctx context.Context, file *multipart.FileHeader, path string) (string, error) {
 	// log.Printf("upload file %s", path)
 	src, err := file.Open()
 	if err != nil {
@@ -57,7 +57,7 @@ func (p *S3Provider) UploadFile(file *multipart.FileHeader, path string) (string
 	}
 	defer src.Close()
 
-	_, err = p.tm.UploadObject(context.TODO(), &transfermanager.UploadObjectInput{
+	_, err = p.tm.UploadObject(ctx, &transfermanager.UploadObjectInput{
 		Bucket: aws.String(p.bucket),
 		Key:    aws.String(path),
 		Body:   src,
@@ -69,8 +69,8 @@ func (p *S3Provider) UploadFile(file *multipart.FileHeader, path string) (string
 	return path, nil
 }
 
-func (p *S3Provider) DeleteFile(path string) error {
-	_, err := p.s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
+func (p *S3Provider) DeleteFile(ctx context.Context, path string) error {
+	_, err := p.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(p.bucket),
 		Key:    aws.String(path),
 	})
