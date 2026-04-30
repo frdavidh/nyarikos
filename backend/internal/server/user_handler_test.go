@@ -28,7 +28,9 @@ func TestUserHandler_GetProfile_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockUser.AssertExpectations(t)
 }
 
@@ -73,7 +75,9 @@ func TestUserHandler_UpdateProfile_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	assert.Equal(t, "Profile updated successfully", resp["message"])
 	mockUser.AssertExpectations(t)
 }
@@ -90,7 +94,9 @@ func TestUserHandler_UpdateProfile_InvalidBody(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	resp := parseResponse(t, w)
-	assert.False(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.False(t, success)
 }
 
 func TestUserHandler_UpdateProfile_ServiceError(t *testing.T) {

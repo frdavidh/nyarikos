@@ -9,8 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrRoomNotFound = errors.New("room not found")
-var ErrFacilityNotFound = errors.New("facility not found")
+var (
+	ErrRoomNotFound     = errors.New("room not found")
+	ErrFacilityNotFound = errors.New("facility not found")
+)
 
 type RoomService interface {
 	CreateRoom(kostID uint, req *dto.CreateRoomRequest) (*dto.RoomResponse, error)
@@ -129,8 +131,8 @@ func (s *roomService) GetRoomByKostID(kostID uint) ([]dto.RoomResponse, error) {
 		return nil, fmt.Errorf("failed to get rooms: %w", err)
 	}
 	responses := make([]dto.RoomResponse, len(rooms))
-	for i, r := range rooms {
-		responses[i] = *toRoomResponse(&r)
+	for i := range rooms {
+		responses[i] = *toRoomResponse(&rooms[i])
 	}
 	return responses, nil
 }

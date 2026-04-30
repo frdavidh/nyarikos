@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	goredis "github.com/redis/go-redis/v9"
 )
 
 var ErrLockNotAcquired = fmt.Errorf("failed to acquire lock")
@@ -11,12 +13,12 @@ var ErrLockNotAcquired = fmt.Errorf("failed to acquire lock")
 func (c *Client) Lock(ctx context.Context, key string, ttl time.Duration) (func() error, error) {
 	token := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	ok, err := c.rdb.SetNX(ctx, key, token, ttl).Result()
+	err := c.rdb.SetArgs(ctx, key, token, goredis.SetArgs{Mode: "NX", TTL: ttl}).Err()
+	if err == goredis.Nil {
+		return nil, ErrLockNotAcquired
+	}
 	if err != nil {
 		return nil, fmt.Errorf("lock: %w", err)
-	}
-	if !ok {
-		return nil, ErrLockNotAcquired
 	}
 
 	release := func() error {

@@ -23,10 +23,12 @@ type mockMidtransSnap struct {
 
 func (m *mockMidtransSnap) CreateTransaction(req *snap.Request) (*snap.Response, *midtrans.Error) {
 	args := m.Called(req)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(*midtrans.Error)
+	resp, _ := args.Get(0).(*snap.Response)
+	err, _ := args.Get(1).(*midtrans.Error)
+	if resp == nil {
+		return nil, err
 	}
-	return args.Get(0).(*snap.Response), args.Get(1).(*midtrans.Error)
+	return resp, err
 }
 
 type mockMidtransCore struct {
@@ -35,17 +37,19 @@ type mockMidtransCore struct {
 
 func (m *mockMidtransCore) CheckTransaction(orderID string) (*coreapi.TransactionStatusResponse, *midtrans.Error) {
 	args := m.Called(orderID)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(*midtrans.Error)
+	resp, _ := args.Get(0).(*coreapi.TransactionStatusResponse)
+	err, _ := args.Get(1).(*midtrans.Error)
+	if resp == nil {
+		return nil, err
 	}
-	return args.Get(0).(*coreapi.TransactionStatusResponse), args.Get(1).(*midtrans.Error)
+	return resp, err
 }
 
-func newTestPaymentService(db *gorm.DB, cfg *config.MidtransConfig, snap midtransSnapClient, core midtransCoreClient) PaymentService {
+func newTestPaymentService(db *gorm.DB, cfg *config.MidtransConfig, snapClient midtransSnapClient, core midtransCoreClient) PaymentService {
 	return &paymentService{
 		db:     db,
 		config: cfg,
-		snap:   snap,
+		snap:   snapClient,
 		core:   core,
 	}
 }
@@ -721,5 +725,7 @@ func TestHandleWebhook_PaidAtOnlySetOnce(t *testing.T) {
 	assert.WithinDuration(t, firstPaidAt, *updated.PaidAt, time.Second)
 }
 
-var _ midtransSnapClient = (*mockMidtransSnap)(nil)
-var _ midtransCoreClient = (*mockMidtransCore)(nil)
+var (
+	_ midtransSnapClient = (*mockMidtransSnap)(nil)
+	_ midtransCoreClient = (*mockMidtransCore)(nil)
+)

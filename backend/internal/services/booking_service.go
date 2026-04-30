@@ -59,7 +59,9 @@ func (s *bookingService) CreateBooking(ctx context.Context, userID uint, req *dt
 			}
 			return nil, fmt.Errorf("failed to acquire lock: %w", err)
 		}
-		defer unlock()
+		defer func() {
+			_ = unlock()
+		}()
 	}
 
 	var booking models.Booking
@@ -100,7 +102,6 @@ func (s *bookingService) CreateBooking(ctx context.Context, userID uint, req *dt
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

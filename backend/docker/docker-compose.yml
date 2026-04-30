@@ -1,7 +1,7 @@
 services:
   postgres:
     restart: unless-stopped
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: postgres_container
     ports:
       - "5432:5432"
@@ -12,6 +12,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
   redis:
     restart: unless-stopped
     image: redis:7-alpine
@@ -21,6 +22,22 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+
+  mailpit:
+    restart: unless-stopped
+    image: axllent/mailpit:v1.29
+    container_name: mailpit
+    volumes:
+      - mailpit_data:/data
+    ports:
+      - 8025:8025
+      - 1025:1025
+    environment:
+      MP_MAX_MESSAGE: 5000
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
   cdn:
     restart: unless-stopped
     image: nginx:alpine
@@ -32,6 +49,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ../uploads:/var/www/uploads
+
   localstack:
     restart: unless-stopped
     image: localstack/localstack:3.8.1
@@ -55,3 +73,4 @@ volumes:
   postgres_data:
   redis_data:
   localstack-data:
+  mailpit_data:

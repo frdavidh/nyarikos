@@ -33,6 +33,7 @@ import (
 
 func main() {
 	log := logger.New()
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load config")
@@ -47,7 +48,6 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to redis")
 	}
-	defer redisClient.Close()
 
 	authService := services.NewAuthService(db, cfg, redisClient)
 	userService := services.NewUserService(db)
@@ -68,17 +68,6 @@ func main() {
 	default:
 		log.Fatal().Msg("invalid upload provider")
 	}
-
-	mainDB, err := db.DB()
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to get database connection")
-	}
-
-	defer func() {
-		if err := mainDB.Close(); err != nil {
-			log.Error().Err(err).Msg("failed to close database connection")
-		}
-	}()
 
 	uploadService := services.NewUploadService(uploadProvider)
 
@@ -125,12 +114,25 @@ func main() {
 	<-quit
 
 	log.Info().Msg("shutting down server")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
 
 	if err := httpServer.Shutdown(ctx); err != nil {
-		log.Error().Err(err).Msg("failed to gracefully shutdown the server")
-		return
+		log.Error().Err(err).Msg("server shutdown")
+	}
+	cancel()
+
+	if err := redisClient.Close(); err != nil {
+		log.Error().Err(err).Msg("failed to close redis conn")
+	}
+
+	mainDB, err := db.DB()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to get database connection")
+	} else {
+		if err := mainDB.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close db conn")
+		}
 	}
 
 	log.Info().Msg("server stopped")

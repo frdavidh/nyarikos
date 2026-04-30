@@ -40,7 +40,8 @@ func TestAuthHandler_Register_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	assert.Equal(t, "user created", resp["message"])
 	mockAuth.AssertExpectations(t)
 }
@@ -57,7 +58,8 @@ func TestAuthHandler_Register_InvalidBody(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	resp := parseResponse(t, w)
-	assert.False(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.False(t, success)
 }
 
 func TestAuthHandler_Register_EmailAlreadyExists(t *testing.T) {
@@ -111,7 +113,8 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	assert.Equal(t, "user logged in", resp["message"])
 	mockAuth.AssertExpectations(t)
 }
@@ -158,7 +161,8 @@ func TestAuthHandler_RefreshToken_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	assert.Equal(t, "token refreshed", resp["message"])
 	mockAuth.AssertExpectations(t)
 }
@@ -199,7 +203,8 @@ func TestAuthHandler_Logout_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	assert.Equal(t, "user logged out", resp["message"])
 	mockAuth.AssertExpectations(t)
 }
@@ -220,7 +225,8 @@ func TestAuthHandler_Logout_ServiceError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	resp := parseResponse(t, w)
-	assert.False(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.False(t, success)
 	mockAuth.AssertExpectations(t)
 }
 
@@ -263,7 +269,8 @@ func TestAuthHandler_GoogleCallback_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	assert.Equal(t, "google login successful", resp["message"])
 	mockAuth.AssertExpectations(t)
 }

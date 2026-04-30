@@ -37,7 +37,9 @@ func TestRoomHandler_CreateRoom_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -71,7 +73,9 @@ func TestRoomHandler_GetRoomByKostID_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -92,7 +96,9 @@ func TestRoomHandler_GetRoomByID_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -148,7 +154,9 @@ func TestRoomHandler_UpdateRoom_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -188,7 +196,9 @@ func TestRoomHandler_DeleteRoom_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -227,7 +237,9 @@ func TestRoomHandler_GetAllFacilities_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -250,7 +262,9 @@ func TestRoomHandler_CreateFacility_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -273,7 +287,9 @@ func TestRoomHandler_UpdateFacility_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 
@@ -355,7 +371,9 @@ func TestRoomHandler_CreateRoomFacility_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockRoom.AssertExpectations(t)
 }
 

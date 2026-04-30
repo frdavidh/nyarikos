@@ -332,7 +332,7 @@ func (s *authService) GoogleCallback(ctx context.Context, code, state string) (*
 }
 
 func (s *authService) fetchGoogleUserInfo(accessToken string) (*googleUserInfo, error) {
-	req, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v2/userinfo", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://www.googleapis.com/oauth2/v2/userinfo", http.NoBody)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,9 @@ func (s *authService) fetchGoogleUserInfo(accessToken string) (*googleUserInfo, 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("google userinfo returned status %d", resp.StatusCode)

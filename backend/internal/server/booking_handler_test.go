@@ -39,7 +39,8 @@ func TestBookingHandler_CreateBooking_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	assert.Equal(t, "booking created successfully", resp["message"])
 	mockBooking.AssertExpectations(t)
 }
@@ -56,7 +57,8 @@ func TestBookingHandler_CreateBooking_InvalidBody(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	resp := parseResponse(t, w)
-	assert.False(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.False(t, success)
 }
 
 func TestBookingHandler_CreateBooking_RoomNotFound(t *testing.T) {

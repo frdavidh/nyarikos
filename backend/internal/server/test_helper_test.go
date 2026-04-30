@@ -74,26 +74,29 @@ type mockAuthService struct {
 
 func (m *mockAuthService) Register(req *dto.RegisterRequest) (*dto.AuthResponse, error) {
 	args := m.Called(req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.AuthResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.AuthResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockAuthService) Login(req *dto.LoginRequest) (*dto.AuthResponse, error) {
 	args := m.Called(req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.AuthResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.AuthResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockAuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
 	args := m.Called(ctx, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.AuthResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.AuthResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockAuthService) Logout(ctx context.Context, refreshToken string) error {
@@ -108,10 +111,11 @@ func (m *mockAuthService) GoogleLogin(ctx context.Context) (string, error) {
 
 func (m *mockAuthService) GoogleCallback(ctx context.Context, code, state string) (*dto.AuthResponse, error) {
 	args := m.Called(ctx, code, state)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.AuthResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.AuthResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 var _ services.AuthService = (*mockAuthService)(nil)
@@ -122,18 +126,20 @@ type mockUserService struct {
 
 func (m *mockUserService) GetProfile(userID uint) (*dto.UserResponse, error) {
 	args := m.Called(userID)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.UserResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.UserResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockUserService) UpdateProfile(userID uint, req *dto.UpdateProfileRequest) (*dto.UserResponse, error) {
 	args := m.Called(userID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.UserResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.UserResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 var _ services.UserService = (*mockUserService)(nil)
@@ -144,42 +150,48 @@ type mockKostService struct {
 
 func (m *mockKostService) CreateKost(ownerID uint, req *dto.CreateKostRequest) (*dto.KostResponse, error) {
 	args := m.Called(ownerID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.KostResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.KostResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockKostService) UpdateKost(kostID, userID uint, req *dto.UpdateKostRequest) (*dto.KostResponse, error) {
 	args := m.Called(kostID, userID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.KostResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.KostResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockKostService) DeleteKost(kostID, userID uint) (*dto.KostResponse, error) {
 	args := m.Called(kostID, userID)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.KostResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.KostResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockKostService) GetAllKost(req *dto.SearchKostRequest) ([]dto.KostResponse, int64, error) {
 	args := m.Called(req)
-	if args.Get(0) == nil {
-		return nil, args.Get(1).(int64), args.Error(2)
+	resp, _ := args.Get(0).([]dto.KostResponse)
+	count, _ := args.Get(1).(int64)
+	if resp == nil {
+		return nil, count, args.Error(2)
 	}
-	return args.Get(0).([]dto.KostResponse), args.Get(1).(int64), args.Error(2)
+	return resp, count, args.Error(2)
 }
 
 func (m *mockKostService) GetKost(id uint) (*dto.KostResponse, error) {
 	args := m.Called(id)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.KostResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.KostResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockKostService) AddKostImage(kostID, userID uint, url, altText string) error {
@@ -195,18 +207,20 @@ type mockRoomService struct {
 
 func (m *mockRoomService) CreateRoom(kostID uint, req *dto.CreateRoomRequest) (*dto.RoomResponse, error) {
 	args := m.Called(kostID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.RoomResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.RoomResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) UpdateRoom(roomID uint, req *dto.UpdateRoomRequest) (*dto.RoomResponse, error) {
 	args := m.Called(roomID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.RoomResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.RoomResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) DeleteRoom(roomID uint) error {
@@ -216,42 +230,47 @@ func (m *mockRoomService) DeleteRoom(roomID uint) error {
 
 func (m *mockRoomService) GetRoomByID(roomID uint) (*dto.RoomResponse, error) {
 	args := m.Called(roomID)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.RoomResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.RoomResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) GetRoomByKostID(kostID uint) ([]dto.RoomResponse, error) {
 	args := m.Called(kostID)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).([]dto.RoomResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]dto.RoomResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) GetAllFacilities() ([]dto.FacilityResponse, error) {
 	args := m.Called()
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).([]dto.FacilityResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]dto.FacilityResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) CreateFacility(req *dto.CreateFacilityRequest) (*dto.FacilityResponse, error) {
 	args := m.Called(req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.FacilityResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.FacilityResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) UpdateFacility(facilityID uint, req *dto.UpdateFacilityRequest) (*dto.FacilityResponse, error) {
 	args := m.Called(facilityID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.FacilityResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.FacilityResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockRoomService) DeleteFacility(facilityID uint) error {
@@ -261,13 +280,14 @@ func (m *mockRoomService) DeleteFacility(facilityID uint) error {
 
 func (m *mockRoomService) CreateRoomFacility(roomID uint, req *dto.CreateRoomFacilityRequest) (*dto.RoomFacilityResponse, error) {
 	args := m.Called(roomID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.RoomFacilityResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.RoomFacilityResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
-func (m *mockRoomService) DeleteRoomFacility(roomID uint, facilityID uint) error {
+func (m *mockRoomService) DeleteRoomFacility(roomID, facilityID uint) error {
 	args := m.Called(roomID, facilityID)
 	return args.Error(0)
 }
@@ -280,10 +300,11 @@ type mockBookingService struct {
 
 func (m *mockBookingService) CreateBooking(ctx context.Context, userID uint, req *dto.CreateBookingRequest) (*dto.BookingResponse, error) {
 	args := m.Called(ctx, userID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.BookingResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.BookingResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 var _ services.BookingService = (*mockBookingService)(nil)
@@ -294,10 +315,11 @@ type mockPaymentService struct {
 
 func (m *mockPaymentService) CreatePayment(userID uint, req *dto.CreatePaymentRequest) (*dto.PaymentResponse, error) {
 	args := m.Called(userID, req)
-	if args.Get(0) == nil {
+	val, _ := args.Get(0).(*dto.PaymentResponse)
+	if val == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.PaymentResponse), args.Error(1)
+	return val, args.Error(1)
 }
 
 func (m *mockPaymentService) HandleWebhook(req *dto.MidtransWebhookRequest) error {
