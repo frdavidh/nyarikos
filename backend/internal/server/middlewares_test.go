@@ -30,7 +30,7 @@ func TestAuthMiddleware_NoHeader(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -50,7 +50,7 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Basic token123")
 	router.ServeHTTP(w, req)
 
@@ -71,7 +71,7 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer invalid-token")
 	router.ServeHTTP(w, req)
 
@@ -101,7 +101,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer "+token)
 	router.ServeHTTP(w, req)
 
@@ -125,7 +125,7 @@ func TestAuthMiddleware_MalformedBearer(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	req.Header.Set("Authorization", "Bearer") // missing token part
 	router.ServeHTTP(w, req)
 
@@ -148,7 +148,7 @@ func TestRoleMiddleware_Allowed(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -170,7 +170,7 @@ func TestRoleMiddleware_Forbidden(t *testing.T) {
 	})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest("GET", "/test", http.NoBody)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)

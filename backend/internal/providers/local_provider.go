@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 type LocalUploadProvider struct {
@@ -20,7 +22,7 @@ func NewLocalUploadProvider(basePath string) *LocalUploadProvider {
 func (p *LocalUploadProvider) UploadFile(_ context.Context, file *multipart.FileHeader, path string) (string, error) {
 	fullPath := filepath.Join(p.basePath, path)
 
-	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 		return "", err
 	}
 
@@ -28,13 +30,21 @@ func (p *LocalUploadProvider) UploadFile(_ context.Context, file *multipart.File
 	if err != nil {
 		return "", err
 	}
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close source")
+		}
+	}()
 
 	dst, err := os.Create(fullPath)
 	if err != nil {
 		return "", err
 	}
-	defer dst.Close()
+	defer func() {
+		if err := dst.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close destination")
+		}
+	}()
 
 	if _, err := dst.ReadFrom(src); err != nil {
 		return "", err

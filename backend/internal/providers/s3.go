@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/rs/zerolog/log"
 
 	appconfig "github.com/frdavidh/nyarikos/internal/config"
 )
@@ -50,12 +51,15 @@ func NewS3Provider(ctx context.Context, cfg *appconfig.Config) (*S3Provider, err
 }
 
 func (p *S3Provider) UploadFile(ctx context.Context, file *multipart.FileHeader, path string) (string, error) {
-	// log.Printf("upload file %s", path)
 	src, err := file.Open()
 	if err != nil {
 		return "", err
 	}
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close source")
+		}
+	}()
 
 	_, err = p.tm.UploadObject(ctx, &transfermanager.UploadObjectInput{
 		Bucket: aws.String(p.bucket),

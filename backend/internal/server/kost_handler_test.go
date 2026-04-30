@@ -44,7 +44,8 @@ func TestKostHandler_CreateKost_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	mockKost.AssertExpectations(t)
 }
 
@@ -82,7 +83,8 @@ func TestKostHandler_GetAllKost_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	mockKost.AssertExpectations(t)
 }
 
@@ -144,7 +146,8 @@ func TestKostHandler_GetKost_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+	assert.True(t, success)
 	mockKost.AssertExpectations(t)
 }
 
@@ -207,7 +210,9 @@ func TestKostHandler_UpdateKost_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockKost.AssertExpectations(t)
 }
 
@@ -253,7 +258,9 @@ func TestKostHandler_DeleteKost_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	mockKost.AssertExpectations(t)
 }
 
@@ -290,9 +297,9 @@ func TestKostHandler_AddKostImage_InvalidFileType(t *testing.T) {
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 	part, _ := writer.CreateFormFile("image", "test.pdf")
-	part.Write([]byte("fake content"))
-	writer.WriteField("alt_text", "Test Image")
-	writer.Close()
+	_, _ = part.Write([]byte("fake content"))
+	_ = writer.WriteField("alt_text", "Test Image")
+	_ = writer.Close()
 
 	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
 
@@ -421,8 +428,8 @@ func TestKostHandler_AddKostImage_NoFile(t *testing.T) {
 
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
-	writer.WriteField("alt_text", "Test")
-	writer.Close()
+	_ = writer.WriteField("alt_text", "Test")
+	_ = writer.Close()
 
 	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
 
@@ -444,8 +451,8 @@ func TestKostHandler_AddKostImage_NoAltText(t *testing.T) {
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 	part, _ := writer.CreateFormFile("image", "test.jpg")
-	part.Write([]byte("fake"))
-	writer.Close()
+	_, _ = part.Write([]byte("fake"))
+	_ = writer.Close()
 
 	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
 
@@ -469,9 +476,9 @@ func TestKostHandler_AddKostImage_UploadGenericError(t *testing.T) {
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 	part, _ := writer.CreateFormFile("image", "test.jpg")
-	part.Write([]byte("fake"))
-	writer.WriteField("alt_text", "Test")
-	writer.Close()
+	_, _ = part.Write([]byte("fake"))
+	_ = writer.WriteField("alt_text", "Test")
+	_ = writer.Close()
 
 	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
 
@@ -496,9 +503,9 @@ func TestKostHandler_AddKostImage_KostNotFoundAfterUpload(t *testing.T) {
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 	part, _ := writer.CreateFormFile("image", "test.jpg")
-	part.Write([]byte("fake"))
-	writer.WriteField("alt_text", "Test")
-	writer.Close()
+	_, _ = part.Write([]byte("fake"))
+	_ = writer.WriteField("alt_text", "Test")
+	_ = writer.Close()
 
 	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
 
@@ -523,9 +530,9 @@ func TestKostHandler_AddKostImage_UnauthorizedAfterUpload(t *testing.T) {
 	var b bytes.Buffer
 	writer := multipart.NewWriter(&b)
 	part, _ := writer.CreateFormFile("image", "test.jpg")
-	part.Write([]byte("fake"))
-	writer.WriteField("alt_text", "Test")
-	writer.Close()
+	_, _ = part.Write([]byte("fake"))
+	_ = writer.WriteField("alt_text", "Test")
+	_ = writer.Close()
 
 	w := makeMultipartRequest(t, router, "POST", "/api/v1/kost/1/images", &b, writer.FormDataContentType(), nil)
 

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -23,14 +24,17 @@ func (t *TokenStore) SaveRefreshToken(ctx context.Context, userID uint, token st
 
 func (t *TokenStore) GetUserIDByRefreshToken(ctx context.Context, token string) (uint, error) {
 	key := fmt.Sprintf("refresh_token:%s", token)
+
 	val, err := t.client.rdb.Get(ctx, key).Result()
 	if err != nil {
 		return 0, fmt.Errorf("refresh token not found: %w", err)
 	}
 
-	var userID uint
-	fmt.Sscanf(val, "%d", &userID)
-	return userID, nil
+	parsed, err := strconv.ParseUint(val, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid user ID: %w", err)
+	}
+	return uint(parsed), nil
 }
 
 func (t *TokenStore) RevokeRefreshToken(ctx context.Context, token string) error {

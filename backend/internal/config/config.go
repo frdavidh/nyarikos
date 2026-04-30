@@ -20,6 +20,7 @@ type Config struct {
 	OAuth2   OAuth2Config
 	Midtrans MidtransConfig
 	Redis    RedisConfig
+	SMTP     SMTPConfig
 }
 
 type ServerConfig struct {
@@ -81,6 +82,14 @@ type RedisConfig struct {
 	DB       int
 }
 
+type SMTPConfig struct {
+	Host     string
+	Port     int
+	Email    string
+	Password string
+	From     string
+}
+
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
@@ -88,24 +97,37 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT_EXPIRES_IN: %w", err)
 	}
+
 	refreshExpiresIn, err := time.ParseDuration(getEnv("JWT_REFRESH_EXPIRES_IN", "72h"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT_REFRESH_EXPIRES_IN: %w", err)
 	}
+
 	maxUploadSize, err := strconv.ParseInt(getEnv("MAX_UPLOAD_SIZE", "10485760"), 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("invalid MAX_UPLOAD_SIZE: %w", err)
 	}
-	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
+
+	redisDB, err := strconv.Atoi(getEnv("REDIS_DB", "0"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid REDIS_DB: %w", err)
+	}
+
+	smtpPort, err := strconv.Atoi(getEnv("SMTP_PORT", "1025"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid SMTP_PORT: %w", err)
+	}
 
 	maxOpenConns, err := strconv.Atoi(getEnv("DB_MAX_OPEN_CONNS", "25"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid DB_MAX_OPEN_CONNS: %w", err)
 	}
+
 	maxIdleConns, err := strconv.Atoi(getEnv("DB_MAX_IDLE_CONNS", "5"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid DB_MAX_IDLE_CONNS: %w", err)
 	}
+
 	connMaxLifetime, err := time.ParseDuration(getEnv("DB_CONN_MAX_LIFETIME", "1h"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid DB_CONN_MAX_LIFETIME: %w", err)
@@ -162,6 +184,13 @@ func Load() (*Config, error) {
 			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
 			DB:       redisDB,
+		},
+		SMTP: SMTPConfig{
+			Host:     getEnv("SMTP_HOST", "localhost"),
+			Port:     smtpPort,
+			Email:    getEnv("SMTP_EMAIL", ""),
+			Password: getEnv("SMTP_PASSWORD", ""),
+			From:     getEnv("SMTP_FROM", "noreply@test.com"),
 		},
 	}, nil
 }

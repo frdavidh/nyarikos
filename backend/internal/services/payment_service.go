@@ -133,7 +133,6 @@ func (s *paymentService) CreatePayment(userID uint, req *dto.CreatePaymentReques
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

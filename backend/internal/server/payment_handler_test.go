@@ -32,7 +32,9 @@ func TestPaymentHandler_CreatePayment_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	assert.Equal(t, "payment created successfully", resp["message"])
 	mockPayment.AssertExpectations(t)
 }
@@ -49,7 +51,9 @@ func TestPaymentHandler_CreatePayment_InvalidBody(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	resp := parseResponse(t, w)
-	assert.False(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.False(t, success)
 }
 
 func TestPaymentHandler_CreatePayment_BookingNotFound(t *testing.T) {
@@ -185,7 +189,9 @@ func TestPaymentHandler_Webhook_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp := parseResponse(t, w)
-	assert.True(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.True(t, success)
 	assert.Equal(t, "webhook processed successfully", resp["message"])
 }
 
@@ -201,7 +207,9 @@ func TestPaymentHandler_Webhook_InvalidBody(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	resp := parseResponse(t, w)
-	assert.False(t, resp["success"].(bool))
+	success, _ := resp["success"].(bool)
+
+	assert.False(t, success)
 }
 
 func TestPaymentHandler_Webhook_PaymentNotFound(t *testing.T) {

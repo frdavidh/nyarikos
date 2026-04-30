@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +15,11 @@ func TestClient_Connection(t *testing.T) {
 	if err != nil {
 		t.Skipf("Redis not available (is docker-compose up -d redis running?): %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close client")
+		}
+	}()
 
 	ctx := context.Background()
 
@@ -66,7 +71,11 @@ func TestLock(t *testing.T) {
 	if err != nil {
 		t.Skipf("Redis not available: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close client")
+		}
+	}()
 
 	ctx := context.Background()
 
@@ -91,7 +100,9 @@ func TestLock(t *testing.T) {
 		key := "test:lock:2"
 		unlock, err := client.Lock(ctx, key, 5*time.Second)
 		require.NoError(t, err)
-		defer unlock()
+		defer func() {
+			_ = unlock()
+		}()
 
 		_, err = client.Lock(ctx, key, 5*time.Second)
 		assert.Equal(t, ErrLockNotAcquired, err)
@@ -101,13 +112,15 @@ func TestLock(t *testing.T) {
 		key := "test:lock:3"
 		unlock, err := client.Lock(ctx, key, 500*time.Millisecond)
 		require.NoError(t, err)
-		defer unlock()
+		defer func() {
+			_ = unlock()
+		}()
 
 		time.Sleep(1 * time.Second)
 
 		unlock2, err := client.Lock(ctx, key, 5*time.Second)
 		require.NoError(t, err)
-		unlock2()
+		_ = unlock2()
 	})
 }
 
@@ -116,7 +129,11 @@ func TestTokenStore(t *testing.T) {
 	if err != nil {
 		t.Skipf("Redis not available: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close client")
+		}
+	}()
 
 	ctx := context.Background()
 	store := NewTokenStore(client)

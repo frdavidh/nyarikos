@@ -222,10 +222,10 @@ func (s *kostService) AddKostImage(kostID, userID uint, url, altText string) err
 
 func toKostResponse(kost *models.Kost) *dto.KostResponse {
 	images := make([]dto.ImageResponse, 0, len(kost.Images))
-	for _, img := range kost.Images {
+	for i := range kost.Images {
 		images = append(images, dto.ImageResponse{
-			ID:       img.ID,
-			ImageURL: img.ImageURL,
+			ID:       kost.Images[i].ID,
+			ImageURL: kost.Images[i].ImageURL,
 		})
 	}
 	rooms := make([]dto.RoomResponse, 0, len(kost.Rooms))
