@@ -75,7 +75,7 @@ func generateTestRefreshToken(cfg *config.JWTConfig, userID uint, email, role st
 func TestAuthService_Register_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	req := &dto.RegisterRequest{
 		Email:       "test@example.com",
@@ -100,7 +100,7 @@ func TestAuthService_Register_Success(t *testing.T) {
 func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	existing := models.User{
 		Email:    "test@example.com",
@@ -127,7 +127,7 @@ func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 func TestAuthService_Register_PemilikRole(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	req := &dto.RegisterRequest{
 		Email:    "owner@example.com",
@@ -145,7 +145,7 @@ func TestAuthService_Register_PemilikRole(t *testing.T) {
 func TestAuthService_Login_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	hashed, err := utils.HashPassword("password123", utils.DefaultParams)
 	require.NoError(t, err)
@@ -177,7 +177,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 func TestAuthService_Login_UserNotFound(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	req := &dto.LoginRequest{
 		Email:    "nonexistent@example.com",
@@ -194,7 +194,7 @@ func TestAuthService_Login_UserNotFound(t *testing.T) {
 func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	hashed, err := utils.HashPassword("correctpassword", utils.DefaultParams)
 	require.NoError(t, err)
@@ -224,7 +224,7 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 func TestAuthService_Login_UserInactive(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	hashed, err := utils.HashPassword("password123", utils.DefaultParams)
 	require.NoError(t, err)
@@ -257,7 +257,7 @@ func TestAuthService_Login_UserInactive(t *testing.T) {
 func TestAuthService_RefreshToken_Success(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	user := models.User{
 		Email:    "test@example.com",
@@ -284,7 +284,7 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	req := &dto.RefreshTokenRequest{RefreshToken: "invalid-token"}
 	resp, err := service.RefreshToken(context.Background(), req)
@@ -297,7 +297,7 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 func TestAuthService_Logout(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	user := models.User{
 		Email:    "test@example.com",
@@ -329,7 +329,7 @@ func TestAuthService_Logout(t *testing.T) {
 func TestAuthService_GoogleLogin(t *testing.T) {
 	db := setupTestDB(t)
 	cfg := testConfig()
-	service := NewAuthService(db, cfg, nil)
+	service := NewAuthService(db, cfg, nil, nil)
 
 	url, err := service.GoogleLogin(context.Background())
 
