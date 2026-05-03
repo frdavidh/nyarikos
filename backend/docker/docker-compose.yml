@@ -12,6 +12,11 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nyarikos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     restart: unless-stopped
@@ -22,6 +27,11 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   mailpit:
     restart: unless-stopped
@@ -68,6 +78,60 @@ services:
       # - localstack-data:/var/lib/localstack
       - "/var/run/docker.sock:/var/run/docker.sock"
       - ./init/aws/init-localstack.sh:/etc/localstack/init/ready.d/init.sh
+
+  # app:
+  #   restart: unless-stopped
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     localstack:
+  #       condition: service_healthy
+  #   environment:
+  #     - DB_HOST=postgres
+  #     - DB_PORT=5432
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=password
+  #     - DB_NAME=nyarikos
+  #     - REDIS_ADDR=redis:6379
+  #     - AWS_S3_ENDPOINT=http://localstack:4566
+  #     - AWS_REGION=us-east-1
+  #     - SMTP_HOST=mailpit
+  #     - SMTP_PORT=1025
+  #     - SMTP_FROM=noreply@nyarikos.com
+  #   command: [ "./api" ]
+
+  notifier:
+    restart: unless-stopped
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=nyarikos
+      - REDIS_ADDR=redis:6379
+      - AWS_S3_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_FROM=noreply@nyarikos.com
+    command: [ "./notifier" ]
+    deploy:
+      replicas: 1
 
 volumes:
   postgres_data:
