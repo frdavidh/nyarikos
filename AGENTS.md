@@ -376,19 +376,45 @@ Output a comprehensive list of scenarios you would test, sorted by highest prior
 When I type "qgit", this means:
 
 ```
-Create a new branch refer to skills create-branch, then add all changes to staging, create a commit, and push to remote.
+**Step 1 — Analyze changes**
+Run `git status` and `git diff` to inspect ALL modified/added/deleted files.
 
-Follow this checklist for writing your commit message:
-- SHOULD use Conventional Commits format: https://www.conventionalcommits.org/en/v1.0.0
-- SHOULD NOT refer to Claude or Anthropic in the commit message.
-- SHOULD structure commit message as follows:
+**Step 2 — Group changes into logical units**
+Group files by what they relate to. Each group = 1 commit (or 1 branch if scope is large enough).
+Grouping rules:
+- Files that implement the SAME feature → 1 commit (feat)
+- Files that fix the SAME bug → 1 commit (fix)
+- Config/tooling changes → separate commit (chore/build/ci)
+- Docs changes → separate commit (docs)
+- Tests for a feature → can be bundled with the feature OR separate commit (test)
+- Refactors unrelated to new features → separate commit (refactor)
+- NEVER mix types in 1 commit (e.g., don't bundle feat + fix)
 
-<type>[optional scope]: <description>
+**Step 3 — Decide: branch per feature or per task?**
+- If changes span MULTIPLE unrelated features → create a branch per feature
+- If changes are all under 1 feature with sub-tasks → 1 branch, multiple commits
+- Branch naming: refer to skill create-branch
 
-[optional body]
+**Step 4 — Stage & commit per group**
+For each group:
+1. `git add <specific files in this group>`
+2. Commit with a message following Conventional Commits format
+3. Do NOT use `git add .` — always be explicit about which files go in each commit
 
-[optional footer(s)]
+**Step 5 — Push all branches to remote**
+Push each branch: `git push origin <branch-name>`
 
-Allowed types: fix, feat, build, chore, ci, docs, style, refactor, perf, test.
-BREAKING CHANGE footer for breaking API changes.
+**Commit message rules:**
+- SHOULD use Conventional Commits: https://www.conventionalcommits.org/en/v1.0.0
+- SHOULD NOT refer to Claude or Anthropic
+- Format:
+  <type>[optional scope]: <description>
+  [optional body]
+  [optional footer(s)]
+- Allowed types: fix, feat, build, chore, ci, docs, style, refactor, perf, test
+- BREAKING CHANGE footer for breaking API changes
+
+**Before executing, show me a plan:**
+List the proposed groups, their files, branch names, and commit messages.
+Ask for confirmation before proceeding.
 ```
