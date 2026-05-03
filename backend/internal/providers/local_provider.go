@@ -54,7 +54,6 @@ func (p *LocalUploadProvider) UploadFile(_ context.Context, file *multipart.File
 }
 
 func (p *LocalUploadProvider) DeleteFile(_ context.Context, path string) error {
-	// Ensure path does not escape the base directory.
 	relPath := filepath.Join(".", filepath.Clean("/"+path))
 	fullPath := filepath.Join(p.basePath, relPath)
 	resolvedPath, err := filepath.EvalSymlinks(fullPath)
