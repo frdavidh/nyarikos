@@ -15,6 +15,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/database"
 	"github.com/frdavidh/nyarikos/internal/interfaces"
 	"github.com/frdavidh/nyarikos/internal/logger"
+	"github.com/frdavidh/nyarikos/internal/notifications"
 	"github.com/frdavidh/nyarikos/internal/providers"
 	"github.com/frdavidh/nyarikos/internal/redis"
 	"github.com/frdavidh/nyarikos/internal/server"
@@ -49,7 +50,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to connect to redis")
 	}
 
-	authService := services.NewAuthService(db, cfg, redisClient)
+	taskClient := notifications.NewTaskClient(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
+
+	authService := services.NewAuthService(db, cfg, redisClient, taskClient)
 	userService := services.NewUserService(db)
 	kostService := services.NewKostService(db)
 	roomService := services.NewRoomService(db)

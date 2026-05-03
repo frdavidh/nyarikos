@@ -14,6 +14,7 @@ import (
 	"github.com/frdavidh/nyarikos/internal/config"
 	"github.com/frdavidh/nyarikos/internal/dto"
 	"github.com/frdavidh/nyarikos/internal/models"
+	"github.com/frdavidh/nyarikos/internal/notifications"
 	"github.com/frdavidh/nyarikos/internal/redis"
 	"github.com/frdavidh/nyarikos/internal/utils"
 	"golang.org/x/oauth2"
@@ -62,14 +63,16 @@ type authService struct {
 	httpClient    httpClient
 	oauthExchange oauthExchanger
 	redisClient   *redis.Client
+	taskClient    *notifications.TaskClient
 }
 
-func NewAuthService(db *gorm.DB, config *config.Config, redisClient *redis.Client) AuthService {
+func NewAuthService(db *gorm.DB, config *config.Config, redisClient *redis.Client, taskClient *notifications.TaskClient) AuthService {
 	svc := &authService{
 		db:          db,
 		config:      config,
 		httpClient:  &http.Client{Timeout: 10 * time.Second},
 		redisClient: redisClient,
+		taskClient:  taskClient,
 	}
 	svc.oauthExchange = &oauth2Wrapper{config: svc.oauthConfig()}
 	return svc
@@ -167,7 +170,15 @@ func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, error) {
 		return nil, ErrInvalidPassword
 	}
 
-	return s.generateAuthResponse(context.Background(), &user)
+	// return s.generateAuthResponse(context.Background(), &user)
+	resp, err := s.generateAuthResponse(context.Background(), &user)
+	if err != nil {
+		return nil, err
+	}
+	if s.taskClient != nil {
+		_ = s.taskClient.EnqueueLoginNotification(user.Email)
+	}
+	return resp, nil
 }
 
 // func (s *authService) RefreshToken(req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
@@ -317,6 +328,10 @@ func (s *authService) GoogleCallback(ctx context.Context, code, state string) (*
 		if err := s.db.Create(&user).Error; err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)
 		}
+	}
+
+	if s.taskClient != nil {
+		_ = s.taskClient.EnqueueLoginNotification(user.Email)
 	}
 
 	social = models.SocialAccount{

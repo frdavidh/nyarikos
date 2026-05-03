@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type SMPTConfig struct {
+type SMTPConfig struct {
 	Host     string
 	Port     int
 	Email    string
@@ -23,10 +23,10 @@ type SimpleEmail struct {
 }
 
 type EmailNotifier struct {
-	config *SMPTConfig
+	config *SMTPConfig
 }
 
-func NewEmailNotifier(config *SMPTConfig) *EmailNotifier {
+func NewEmailNotifier(config *SMTPConfig) *EmailNotifier {
 	return &EmailNotifier{
 		config: config,
 	}
